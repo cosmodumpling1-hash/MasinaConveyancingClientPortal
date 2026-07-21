@@ -1,0 +1,6 @@
+{
+  "name": "Property Law Client Portal",
+  "description": "An enterprise-grade, secure Property Law and Conveyancing Client Portal with stage tracking, document verification, messaging, and appointment booking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

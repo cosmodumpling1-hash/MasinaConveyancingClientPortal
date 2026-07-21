@@ -1,0 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Marcellus&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Marcellus", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* Custom Professional Polish Palette */
+  --color-brand-navy: #0B192C;
+  --color-brand-blue-slate: #1E293B;
+  --color-brand-gold: #C5A880;
+  --color-brand-gold-dark: #A37E36;
+  --color-brand-gold-light: #FDFBF7;
+  --color-brand-cream: #FAF9F6;
+  --color-brand-border: rgba(226, 232, 240, 0.8);
+  
+  --shadow-premium: 0 4px 20px rgba(0, 0, 0, 0.02), 0 2px 8px rgba(0, 0, 0, 0.02);
+  --shadow-hover: 0 10px 30px rgba(11, 25, 44, 0.04), 0 4px 12px rgba(11, 25, 44, 0.02);
+}
+
+/* Base style enhancements */
+body {
+  background-color: #FAF9F6;
+  font-family: var(--font-sans);
+}
+
+h1, h2, h3, .legal-serif {
+  font-family: var(--font-serif);
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
