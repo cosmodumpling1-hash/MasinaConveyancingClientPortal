@@ -84,7 +84,7 @@ export default function MessagingHub({ conversations, messages, currentUser, sel
             </div>
             <div>
               <h4 className="text-sm font-serif font-bold text-brand-navy leading-tight">
-                {activeConversation?.title || 'Pendelton Conveyancing Hub'}
+                {activeConversation?.title || 'Masina Conveyancing Hub'}
               </h4>
               <p className="text-[9px] font-bold text-emerald-600 uppercase mt-0.5 flex items-center space-x-1">
                 <Shield className="h-3 w-3 shrink-0" />

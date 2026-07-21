@@ -83,8 +83,8 @@ const INITIAL_DATA = {
     },
     {
       id: 'usr-attorney-1',
-      name: 'Arthur Pendelton',
-      email: 'arthur@pendeltonlaw.co.za',
+      name: 'Arthur Masina',
+      email: 'arthur@masinalaw.co.za',
       role: 'attorney',
       phone: '+27 11 432 9000',
       kycStatus: 'verified',
@@ -94,7 +94,7 @@ const INITIAL_DATA = {
     {
       id: 'usr-convey-1',
       name: 'Clara Convey',
-      email: 'clara@pendeltonlaw.co.za',
+      email: 'clara@masinalaw.co.za',
       role: 'conveyancer',
       phone: '+27 11 432 9005',
       kycStatus: 'verified',
@@ -104,7 +104,7 @@ const INITIAL_DATA = {
     {
       id: 'usr-paralegal-1',
       name: 'Pamela Paralegal',
-      email: 'pamela@pendeltonlaw.co.za',
+      email: 'pamela@masinalaw.co.za',
       role: 'paralegal',
       phone: '+27 11 432 9011',
       kycStatus: 'verified',
@@ -114,7 +114,7 @@ const INITIAL_DATA = {
     {
       id: 'usr-admin-1',
       name: 'Admin Alice',
-      email: 'alice@pendeltonlaw.co.za',
+      email: 'alice@masinalaw.co.za',
       role: 'admin',
       phone: '+27 11 432 9001',
       kycStatus: 'verified',
@@ -133,7 +133,7 @@ const INITIAL_DATA = {
       sellerId: 'usr-client-2',
       sellerName: 'Sarah Seller',
       assignedAttorneyId: 'usr-attorney-1',
-      assignedAttorneyName: 'Arthur Pendelton',
+      assignedAttorneyName: 'Arthur Masina',
       assignedParalegalId: 'usr-paralegal-1',
       assignedParalegalName: 'Pamela Paralegal',
       currentStage: 3, // Stage 3: FICA & Compliance
@@ -240,7 +240,7 @@ const INITIAL_DATA = {
         }
       ],
       activities: [
-        { id: 'act-1', date: '2026-07-10T10:00:00Z', type: 'stage_change', description: 'Matter formally opened and Stage 1 completed', actor: 'Arthur Pendelton' },
+        { id: 'act-1', date: '2026-07-10T10:00:00Z', type: 'stage_change', description: 'Matter formally opened and Stage 1 completed', actor: 'Arthur Masina' },
         { id: 'act-2', date: '2026-07-12T11:45:00Z', type: 'document_upload', description: 'Signed Offer to Purchase uploaded', actor: 'John Buyer' },
         { id: 'act-3', date: '2026-07-15T15:20:00Z', type: 'stage_change', description: 'Contract Review (Stage 2) completed', actor: 'Pamela Paralegal' },
         { id: 'act-4', date: '2026-07-18T09:10:00Z', type: 'document_upload', description: 'FICA Identity document uploaded', actor: 'John Buyer' },
@@ -257,7 +257,7 @@ const INITIAL_DATA = {
       sellerId: 'usr-client-1',
       sellerName: 'John Buyer',
       assignedAttorneyId: 'usr-attorney-1',
-      assignedAttorneyName: 'Arthur Pendelton',
+      assignedAttorneyName: 'Arthur Masina',
       assignedParalegalId: 'usr-paralegal-1',
       assignedParalegalName: 'Pamela Paralegal',
       currentStage: 6, // Stage 6: Lodgement
@@ -378,7 +378,7 @@ const INITIAL_DATA = {
       title: 'Review SARS Draft Transfer Duty Calculation',
       description: 'Verify SARS duty assessment calculated by paralegal before finalizing payment.',
       assignedToId: 'usr-attorney-1',
-      assignedToName: 'Arthur Pendelton',
+      assignedToName: 'Arthur Masina',
       assignedToRole: 'staff',
       dueDate: '2026-07-24',
       status: 'pending'
@@ -394,7 +394,7 @@ const INITIAL_DATA = {
       participants: [
         { userId: 'usr-client-1', name: 'John Buyer', role: 'buyer' },
         { userId: 'usr-client-2', name: 'Sarah Seller', role: 'seller' },
-        { userId: 'usr-attorney-1', name: 'Arthur Pendelton', role: 'attorney' },
+        { userId: 'usr-attorney-1', name: 'Arthur Masina', role: 'attorney' },
         { userId: 'usr-paralegal-1', name: 'Pamela Paralegal', role: 'paralegal' }
       ],
       lastMessageText: 'I have approved your ID document, John. Looking forward to your residential proof.',
@@ -416,7 +416,7 @@ const INITIAL_DATA = {
       id: 'msg-2',
       conversationId: 'conv-1',
       senderId: 'usr-attorney-1',
-      senderName: 'Arthur Pendelton',
+      senderName: 'Arthur Masina',
       senderRole: 'attorney',
       text: 'Yes John, Pamela is checking on your compliance clearance. We have verified the sales agreement and we are moving to Stage 3 (FICA check) today.',
       timestamp: '2026-07-15T14:10:00Z',
@@ -449,7 +449,7 @@ const INITIAL_DATA = {
       clientId: 'usr-client-1',
       clientName: 'John Buyer',
       staffId: 'usr-attorney-1',
-      staffName: 'Arthur Pendelton',
+      staffName: 'Arthur Masina',
       staffRole: 'attorney',
       date: '2026-07-23',
       time: '10:00',
@@ -476,17 +476,17 @@ const INITIAL_DATA = {
     }
   ],
   automationRules: [
-    { id: 'rule-1', name: 'Welcome Onboarding Notification', trigger: 'matter_opened', actionType: 'email', template: 'Dear {{client_name}}, welcome to Pendelton Law. Matter {{matter_number}} has been successfully opened for your property at {{property_address}}.', enabled: true },
+    { id: 'rule-1', name: 'Welcome Onboarding Notification', trigger: 'matter_opened', actionType: 'email', template: 'Dear {{client_name}}, welcome to Masina Law. Matter {{matter_number}} has been successfully opened for your property at {{property_address}}.', enabled: true },
     { id: 'rule-2', name: 'Stage Completed Alert', trigger: 'stage_completed', actionType: 'push', template: 'Great news! Your property matter {{matter_number}} has progressed. Stage {{stage_number}} is now completed.', enabled: true },
-    { id: 'rule-3', name: 'Missing Document Warning', trigger: 'document_reminder', actionType: 'sms', template: 'Reminder from Pendelton Law: You have outstanding FICA compliance documents due for Sandton Villa transfer.', enabled: true },
+    { id: 'rule-3', name: 'Missing Document Warning', trigger: 'document_reminder', actionType: 'sms', template: 'Reminder from Masina Law: You have outstanding FICA compliance documents due for Sandton Villa transfer.', enabled: true },
     { id: 'rule-4', name: 'Deeds Registration Confirmation', trigger: 'deeds_registered', actionType: 'email', template: 'CONGRATULATIONS! Your transfer at {{property_address}} has officially registered today. The deed is secured.', enabled: true }
   ],
   automationLogs: [
-    { id: 'al-1', timestamp: '2026-07-10T10:05:00Z', matterId: 'mat-1', matterNumber: 'MAT-2026-9081', triggerName: 'Welcome Onboarding Notification', recipient: 'john.buyer@gmail.com', type: 'email', content: 'Dear John Buyer, welcome to Pendelton Law. Matter MAT-2026-9081 has been successfully opened for your property at 124 Villa Rosa, Sandton.', status: 'sent' },
+    { id: 'al-1', timestamp: '2026-07-10T10:05:00Z', matterId: 'mat-1', matterNumber: 'MAT-2026-9081', triggerName: 'Welcome Onboarding Notification', recipient: 'john.buyer@gmail.com', type: 'email', content: 'Dear John Buyer, welcome to Masina Law. Matter MAT-2026-9081 has been successfully opened for your property at 124 Villa Rosa, Sandton.', status: 'sent' },
     { id: 'al-2', timestamp: '2026-07-15T15:25:00Z', matterId: 'mat-1', matterNumber: 'MAT-2026-9081', triggerName: 'Stage Completed Alert', recipient: 'John Buyer', type: 'push', content: 'Great news! Your property matter MAT-2026-9081 has progressed. Stage 2 is now completed.', status: 'sent' }
   ],
   auditLogs: [
-    { id: 'ad-1', timestamp: '2026-07-10T10:00:00Z', userId: 'usr-attorney-1', userName: 'Arthur Pendelton', userRole: 'attorney', action: 'CREATE_MATTER', details: 'Formally created property conveyancing matter MAT-2026-9081', ipAddress: '197.80.200.41' },
+    { id: 'ad-1', timestamp: '2026-07-10T10:00:00Z', userId: 'usr-attorney-1', userName: 'Arthur Masina', userRole: 'attorney', action: 'CREATE_MATTER', details: 'Formally created property conveyancing matter MAT-2026-9081', ipAddress: '197.80.200.41' },
     { id: 'ad-2', timestamp: '2026-07-12T11:45:00Z', userId: 'usr-client-1', userName: 'John Buyer', userRole: 'buyer', action: 'UPLOAD_DOCUMENT', details: 'Uploaded document Signed_OTP_Sandton_Villa.pdf (category: sale_agreement)', ipAddress: '41.13.44.182' },
     { id: 'ad-3', timestamp: '2026-07-18T14:35:00Z', userId: 'usr-paralegal-1', userName: 'Pamela Paralegal', userRole: 'paralegal', action: 'APPROVE_DOCUMENT', details: 'Reviewed and approved John_Buyer_ID_Card.png (category: identity)', ipAddress: '197.80.200.42' }
   ]
@@ -515,10 +515,473 @@ function saveData(data: any) {
   }
 }
 
-// Log actions to the security audit trail
-function logAudit(userId: string, action: string, details: string, req: express.Request) {
+// --- Dynamic Supabase DB Integration Helpers ---
+
+async function getUsersFromDb() {
+  const supabase = getSupabaseClient();
+  if (supabase) {
+    try {
+      const { data, error } = await supabase.from('users').select('*');
+      if (!error && data) {
+        if (data.length > 0) {
+          return data;
+        } else {
+          // Table exists but is empty. Seed it.
+          const localData = loadData().users;
+          if (localData && localData.length > 0) {
+            console.log("Auto-seeding empty Supabase 'users' table...");
+            await supabase.from('users').upsert(localData);
+          }
+          return localData;
+        }
+      } else if (error) {
+        console.warn("Supabase getUsers query notice (using fallback):", error.message);
+      }
+    } catch (e) {
+      console.warn("Supabase getUsers notice (using fallback):", e);
+    }
+  }
+  return loadData().users;
+}
+
+async function saveUserToDb(user: any) {
   const db = loadData();
-  const user = db.users.find((u: any) => u.id === userId);
+  const idx = db.users.findIndex((u: any) => u.id === user.id || u.email === user.email);
+  if (idx !== -1) {
+    db.users[idx] = { ...db.users[idx], ...user };
+    user = db.users[idx];
+  } else {
+    db.users.push(user);
+  }
+  saveData(db);
+
+  const supabase = getSupabaseClient();
+  if (supabase) {
+    try {
+      await supabase.from('users').upsert(user);
+    } catch (e) {
+      console.error("Supabase saveUser error:", e);
+    }
+  }
+}
+
+async function getMattersFromDb() {
+  const supabase = getSupabaseClient();
+  if (supabase) {
+    try {
+      const { data, error } = await supabase.from('matters').select('*');
+      if (!error && data) {
+        if (data.length > 0) {
+          return data.map((item: any) => ({
+            ...item,
+            stages: typeof item.stages === 'string' ? JSON.parse(item.stages) : (item.stages || []),
+            activities: typeof item.activities === 'string' ? JSON.parse(item.activities) : (item.activities || [])
+          }));
+        } else {
+          const localData = loadData().matters;
+          if (localData && localData.length > 0) {
+            console.log("Auto-seeding empty Supabase 'matters' table...");
+            const payload = localData.map((m: any) => ({
+              ...m,
+              stages: typeof m.stages === 'object' ? JSON.stringify(m.stages) : m.stages,
+              activities: typeof m.activities === 'object' ? JSON.stringify(m.activities) : m.activities
+            }));
+            await supabase.from('matters').upsert(payload);
+          }
+          return localData;
+        }
+      } else if (error) {
+        console.warn("Supabase getMatters query notice (using fallback):", error.message);
+      }
+    } catch (e) {
+      console.warn("Supabase getMatters notice (using fallback):", e);
+    }
+  }
+  return loadData().matters;
+}
+
+async function saveMatterToDb(matter: any) {
+  const db = loadData();
+  const idx = db.matters.findIndex((m: any) => m.id === matter.id);
+  if (idx !== -1) {
+    db.matters[idx] = matter;
+  } else {
+    db.matters.push(matter);
+  }
+  saveData(db);
+
+  const supabase = getSupabaseClient();
+  if (supabase) {
+    try {
+      const payload = {
+        ...matter,
+        stages: typeof matter.stages === 'object' ? JSON.stringify(matter.stages) : matter.stages,
+        activities: typeof matter.activities === 'object' ? JSON.stringify(matter.activities) : matter.activities
+      };
+      await supabase.from('matters').upsert(payload);
+    } catch (e) {
+      console.error("Supabase saveMatter error:", e);
+    }
+  }
+}
+
+async function getDocumentsFromDb() {
+  const supabase = getSupabaseClient();
+  if (supabase) {
+    try {
+      const { data, error } = await supabase.from('documents').select('*');
+      if (!error && data) {
+        if (data.length > 0) {
+          return data;
+        } else {
+          const localData = loadData().documents;
+          if (localData && localData.length > 0) {
+            console.log("Auto-seeding empty Supabase 'documents' table...");
+            await supabase.from('documents').upsert(localData);
+          }
+          return localData;
+        }
+      } else if (error) {
+        console.warn("Supabase getDocuments query notice (using fallback):", error.message);
+      }
+    } catch (e) {
+      console.warn("Supabase getDocuments notice (using fallback):", e);
+    }
+  }
+  return loadData().documents;
+}
+
+async function saveDocumentToDb(document: any) {
+  const db = loadData();
+  const idx = db.documents.findIndex((d: any) => d.id === document.id);
+  if (idx !== -1) {
+    db.documents[idx] = document;
+  } else {
+    db.documents.push(document);
+  }
+  saveData(db);
+
+  const supabase = getSupabaseClient();
+  if (supabase) {
+    try {
+      await supabase.from('documents').upsert(document);
+    } catch (e) {
+      console.error("Supabase saveDocument error:", e);
+    }
+  }
+}
+
+async function getTasksFromDb() {
+  const supabase = getSupabaseClient();
+  if (supabase) {
+    try {
+      const { data, error } = await supabase.from('tasks').select('*');
+      if (!error && data) {
+        if (data.length > 0) {
+          return data;
+        } else {
+          const localData = loadData().tasks;
+          if (localData && localData.length > 0) {
+            console.log("Auto-seeding empty Supabase 'tasks' table...");
+            await supabase.from('tasks').upsert(localData);
+          }
+          return localData;
+        }
+      } else if (error) {
+        console.warn("Supabase getTasks query notice (using fallback):", error.message);
+      }
+    } catch (e) {
+      console.warn("Supabase getTasks notice (using fallback):", e);
+    }
+  }
+  return loadData().tasks;
+}
+
+async function saveTaskToDb(task: any) {
+  const db = loadData();
+  const idx = db.tasks.findIndex((t: any) => t.id === task.id);
+  if (idx !== -1) {
+    db.tasks[idx] = task;
+  } else {
+    db.tasks.unshift(task);
+  }
+  saveData(db);
+
+  const supabase = getSupabaseClient();
+  if (supabase) {
+    try {
+      await supabase.from('tasks').upsert(task);
+    } catch (e) {
+      console.error("Supabase saveTask error:", e);
+    }
+  }
+}
+
+async function getConversationsFromDb() {
+  const supabase = getSupabaseClient();
+  if (supabase) {
+    try {
+      const { data, error } = await supabase.from('conversations').select('*');
+      if (!error && data) {
+        if (data.length > 0) {
+          return data;
+        } else {
+          const localData = loadData().conversations;
+          if (localData && localData.length > 0) {
+            console.log("Auto-seeding empty Supabase 'conversations' table...");
+            await supabase.from('conversations').upsert(localData);
+          }
+          return localData;
+        }
+      } else if (error) {
+        console.warn("Supabase getConversations query notice (using fallback):", error.message);
+      }
+    } catch (e) {
+      console.warn("Supabase getConversations notice (using fallback):", e);
+    }
+  }
+  return loadData().conversations;
+}
+
+async function saveConversationToDb(conversation: any) {
+  const db = loadData();
+  const idx = db.conversations.findIndex((c: any) => c.id === conversation.id);
+  if (idx !== -1) {
+    db.conversations[idx] = conversation;
+  } else {
+    db.conversations.push(conversation);
+  }
+  saveData(db);
+
+  const supabase = getSupabaseClient();
+  if (supabase) {
+    try {
+      await supabase.from('conversations').upsert(conversation);
+    } catch (e) {
+      console.error("Supabase saveConversation error:", e);
+    }
+  }
+}
+
+async function getMessagesFromDb() {
+  const supabase = getSupabaseClient();
+  if (supabase) {
+    try {
+      const { data, error } = await supabase.from('messages').select('*');
+      if (!error && data) {
+        if (data.length > 0) {
+          return data;
+        } else {
+          const localData = loadData().messages;
+          if (localData && localData.length > 0) {
+            console.log("Auto-seeding empty Supabase 'messages' table...");
+            await supabase.from('messages').upsert(localData);
+          }
+          return localData;
+        }
+      } else if (error) {
+        console.warn("Supabase getMessages query notice (using fallback):", error.message);
+      }
+    } catch (e) {
+      console.warn("Supabase getMessages notice (using fallback):", e);
+    }
+  }
+  return loadData().messages;
+}
+
+async function saveMessageToDb(message: any) {
+  const db = loadData();
+  db.messages.push(message);
+  saveData(db);
+
+  const supabase = getSupabaseClient();
+  if (supabase) {
+    try {
+      await supabase.from('messages').upsert(message);
+    } catch (e) {
+      console.error("Supabase saveMessage error:", e);
+    }
+  }
+}
+
+async function getAppointmentsFromDb() {
+  const supabase = getSupabaseClient();
+  if (supabase) {
+    try {
+      const { data, error } = await supabase.from('appointments').select('*');
+      if (!error && data) {
+        if (data.length > 0) {
+          return data;
+        } else {
+          const localData = loadData().appointments;
+          if (localData && localData.length > 0) {
+            console.log("Auto-seeding empty Supabase 'appointments' table...");
+            await supabase.from('appointments').upsert(localData);
+          }
+          return localData;
+        }
+      } else if (error) {
+        console.warn("Supabase getAppointments query notice (using fallback):", error.message);
+      }
+    } catch (e) {
+      console.warn("Supabase getAppointments notice (using fallback):", e);
+    }
+  }
+  return loadData().appointments;
+}
+
+async function saveAppointmentToDb(appointment: any) {
+  const db = loadData();
+  const idx = db.appointments.findIndex((a: any) => a.id === appointment.id);
+  if (idx !== -1) {
+    db.appointments[idx] = appointment;
+  } else {
+    db.appointments.unshift(appointment);
+  }
+  saveData(db);
+
+  const supabase = getSupabaseClient();
+  if (supabase) {
+    try {
+      await supabase.from('appointments').upsert(appointment);
+    } catch (e) {
+      console.error("Supabase saveAppointment error:", e);
+    }
+  }
+}
+
+async function getAutomationRulesFromDb() {
+  const supabase = getSupabaseClient();
+  if (supabase) {
+    try {
+      const { data, error } = await supabase.from('automationRules').select('*');
+      if (!error && data) {
+        if (data.length > 0) {
+          return data;
+        } else {
+          const localData = loadData().automationRules || [];
+          if (localData && localData.length > 0) {
+            console.log("Auto-seeding empty Supabase 'automationRules' table...");
+            await supabase.from('automationRules').upsert(localData);
+          }
+          return localData;
+        }
+      } else if (error) {
+        console.warn("Supabase getAutomationRules query notice (using fallback):", error.message);
+      }
+    } catch (e) {
+      console.warn("Supabase getAutomationRules notice (using fallback):", e);
+    }
+  }
+  return loadData().automationRules || [];
+}
+
+async function saveAutomationRuleToDb(rule: any) {
+  const db = loadData();
+  const idx = db.automationRules.findIndex((r: any) => r.id === rule.id);
+  if (idx !== -1) {
+    db.automationRules[idx] = rule;
+  } else {
+    db.automationRules.push(rule);
+  }
+  saveData(db);
+
+  const supabase = getSupabaseClient();
+  if (supabase) {
+    try {
+      await supabase.from('automationRules').upsert(rule);
+    } catch (e) {
+      console.error("Supabase saveAutomationRule error:", e);
+    }
+  }
+}
+
+async function getAutomationLogsFromDb() {
+  const supabase = getSupabaseClient();
+  if (supabase) {
+    try {
+      const { data, error } = await supabase.from('automationLogs').select('*');
+      if (!error && data) {
+        if (data.length > 0) {
+          return data;
+        } else {
+          const localData = loadData().automationLogs || [];
+          if (localData && localData.length > 0) {
+            console.log("Auto-seeding empty Supabase 'automationLogs' table...");
+            await supabase.from('automationLogs').upsert(localData);
+          }
+          return localData;
+        }
+      } else if (error) {
+        console.warn("Supabase getAutomationLogs query notice (using fallback):", error.message);
+      }
+    } catch (e) {
+      console.warn("Supabase getAutomationLogs notice (using fallback):", e);
+    }
+  }
+  return loadData().automationLogs || [];
+}
+
+async function saveAutomationLogToDb(log: any) {
+  const db = loadData();
+  db.automationLogs.unshift(log);
+  saveData(db);
+
+  const supabase = getSupabaseClient();
+  if (supabase) {
+    try {
+      await supabase.from('automationLogs').upsert(log);
+    } catch (e) {
+      console.error("Supabase saveAutomationLog error:", e);
+    }
+  }
+}
+
+async function getAuditLogsFromDb() {
+  const supabase = getSupabaseClient();
+  if (supabase) {
+    try {
+      const { data, error } = await supabase.from('auditLogs').select('*');
+      if (!error && data) {
+        if (data.length > 0) {
+          return data;
+        } else {
+          const localData = loadData().auditLogs || [];
+          if (localData && localData.length > 0) {
+            console.log("Auto-seeding empty Supabase 'auditLogs' table...");
+            await supabase.from('auditLogs').upsert(localData);
+          }
+          return localData;
+        }
+      } else if (error) {
+        console.warn("Supabase getAuditLogs query notice (using fallback):", error.message);
+      }
+    } catch (e) {
+      console.warn("Supabase getAuditLogs notice (using fallback):", e);
+    }
+  }
+  return loadData().auditLogs || [];
+}
+
+async function saveAuditLogToDb(log: any) {
+  const db = loadData();
+  db.auditLogs.unshift(log);
+  saveData(db);
+
+  const supabase = getSupabaseClient();
+  if (supabase) {
+    try {
+      await supabase.from('auditLogs').upsert(log);
+    } catch (e) {
+      console.error("Supabase saveAuditLog error:", e);
+    }
+  }
+}
+
+// Log actions to the security audit trail
+async function logAudit(userId: string, action: string, details: string, req: express.Request) {
+  const users = await getUsersFromDb();
+  const user = users.find((u: any) => u.id === userId);
   
   const newAudit = {
     id: `ad-${Date.now()}`,
@@ -531,14 +994,13 @@ function logAudit(userId: string, action: string, details: string, req: express.
     ipAddress: req.ip || '127.0.0.1'
   };
   
-  db.auditLogs.unshift(newAudit);
-  saveData(db);
+  await saveAuditLogToDb(newAudit);
 }
 
 // Trigger automatic workflow event and write log
-function triggerWorkflowEvent(matterId: string, triggerName: string, recipientName: string, recipientContact: string, contentText: string, type: 'email' | 'sms' | 'push') {
-  const db = loadData();
-  const matter = db.matters.find((m: any) => m.id === matterId);
+async function triggerWorkflowEvent(matterId: string, triggerName: string, recipientName: string, recipientContact: string, contentText: string, type: 'email' | 'sms' | 'push') {
+  const matters = await getMattersFromDb();
+  const matter = matters.find((m: any) => m.id === matterId);
   
   const log = {
     id: `al-${Date.now()}`,
@@ -552,30 +1014,28 @@ function triggerWorkflowEvent(matterId: string, triggerName: string, recipientNa
     status: 'sent' as const
   };
   
-  db.automationLogs.unshift(log);
-  saveData(db);
+  await saveAutomationLogToDb(log);
 }
 
 // API Routes
 
 // Authenticate / Switch User context easily for the client portal
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', async (req, res) => {
   const { userId } = req.body;
-  const db = loadData();
-  const user = db.users.find((u: any) => u.id === userId);
+  const users = await getUsersFromDb();
+  const user = users.find((u: any) => u.id === userId);
   
   if (!user) {
     return res.status(401).json({ error: 'User profile not found.' });
   }
   
-  logAudit(userId, 'USER_LOGIN', `Logged in using OAuth2 simulator (MFA & Biometric integration validated)`, req);
+  await logAudit(userId, 'USER_LOGIN', `Logged in using OAuth2 simulator (MFA & Biometric integration validated)`, req);
   res.json({ user });
 });
 
 // Create/Register new users in the conveyancing system
-app.post('/api/auth/register', (req, res) => {
+app.post('/api/auth/register', async (req, res) => {
   const { name, email, role, phone, idNumber, address } = req.body;
-  const db = loadData();
   
   if (!name || !email || !role) {
     return res.status(400).json({ error: 'Required fields: name, email, role.' });
@@ -595,13 +1055,11 @@ app.post('/api/auth/register', (req, res) => {
     avatarUrl: `https://images.unsplash.com/photo-${role === 'buyer' ? '1500648767791-00dcc994a43e' : '1494790108377-be9c29b29330'}?w=150`
   };
   
-  db.users.push(newUser);
-  saveData(db);
-  
-  logAudit(newUser.id, 'USER_REGISTER', `Created account as ${role} and accepted POPIA/GDPR regulations.`, req);
+  await saveUserToDb(newUser);
+  await logAudit(newUser.id, 'USER_REGISTER', `Created account as ${role} and accepted POPIA/GDPR regulations.`, req);
   
   // Trigger automatic welcome notification
-  triggerWorkflowEvent(
+  await triggerWorkflowEvent(
     'GENERAL',
     'Welcome Onboarding Notification',
     newUser.name,
@@ -614,50 +1072,50 @@ app.post('/api/auth/register', (req, res) => {
 });
 
 // Update KYC & Onboarding values
-app.post('/api/auth/kyc-update', (req, res) => {
+app.post('/api/auth/kyc-update', async (req, res) => {
   const { userId, idNumber, address, phone } = req.body;
-  const db = loadData();
-  const userIndex = db.users.findIndex((u: any) => u.id === userId);
+  const users = await getUsersFromDb();
+  const user = users.find((u: any) => u.id === userId);
   
-  if (userIndex === -1) {
+  if (!user) {
     return res.status(404).json({ error: 'User not found' });
   }
   
-  db.users[userIndex] = {
-    ...db.users[userIndex],
+  const updatedUser = {
+    ...user,
     idNumber,
     address,
     phone,
-    kycStatus: 'pending'
+    kycStatus: 'pending' as const
   };
   
-  saveData(db);
-  logAudit(userId, 'KYC_SUBMISSION', 'Submitted onboarding details and digital identity credentials', req);
-  res.json({ user: db.users[userIndex] });
+  await saveUserToDb(updatedUser);
+  await logAudit(userId, 'KYC_SUBMISSION', 'Submitted onboarding details and digital identity credentials', req);
+  res.json({ user: updatedUser });
 });
 
 // Matters Endpoints
-app.get('/api/matters', (req, res) => {
-  const db = loadData();
-  res.json(db.matters);
+app.get('/api/matters', async (req, res) => {
+  const matters = await getMattersFromDb();
+  res.json(matters);
 });
 
-app.get('/api/matters/:id', (req, res) => {
-  const db = loadData();
-  const matter = db.matters.find((m: any) => m.id === req.params.id);
+app.get('/api/matters/:id', async (req, res) => {
+  const matters = await getMattersFromDb();
+  const matter = matters.find((m: any) => m.id === req.params.id);
   if (!matter) return res.status(404).json({ error: 'Matter not found' });
   res.json(matter);
 });
 
 // Create property matters
-app.post('/api/matters', (req, res) => {
+app.post('/api/matters', async (req, res) => {
   const { propertyAddress, propertyPrice, buyerName, sellerName, assignedAttorneyId, expectedCompletionDate } = req.body;
-  const db = loadData();
+  const users = await getUsersFromDb();
   
-  const buyerUser = db.users.find((u: any) => u.name === buyerName) || db.users[0];
-  const sellerUser = db.users.find((u: any) => u.name === sellerName) || db.users[1];
-  const attorney = db.users.find((u: any) => u.id === assignedAttorneyId) || db.users.find((u: any) => u.role === 'attorney');
-  const paralegal = db.users.find((u: any) => u.role === 'paralegal');
+  const buyerUser = users.find((u: any) => u.name === buyerName) || users[0];
+  const sellerUser = users.find((u: any) => u.name === sellerName) || users[1];
+  const attorney = users.find((u: any) => u.id === assignedAttorneyId) || users.find((u: any) => u.role === 'attorney');
+  const paralegal = users.find((u: any) => u.role === 'paralegal');
 
   const newMatter = {
     id: `mat-${Date.now()}`,
@@ -691,31 +1149,30 @@ app.post('/api/matters', (req, res) => {
     ]
   };
 
-  db.matters.push(newMatter);
-  saveData(db);
+  await saveMatterToDb(newMatter);
 
   // Trigger automation log
-  triggerWorkflowEvent(
+  await triggerWorkflowEvent(
     newMatter.id,
     'Welcome Onboarding Notification',
     buyerUser.name,
     buyerUser.email,
-    `Dear ${buyerUser.name}, welcome to Pendelton Law. Matter ${newMatter.matterNumber} has been opened for ${propertyAddress}.`,
+    `Dear ${buyerUser.name}, welcome to Masina Law. Matter ${newMatter.matterNumber} has been opened for ${propertyAddress}.`,
     'email'
   );
 
-  logAudit(attorney.id, 'CREATE_MATTER', `Opened new property transaction matter ${newMatter.matterNumber}`, req);
+  await logAudit(attorney.id, 'CREATE_MATTER', `Opened new property transaction matter ${newMatter.matterNumber}`, req);
   res.json(newMatter);
 });
 
 // Update matter's Stage or Lawyer Notes
-app.post('/api/matters/:id/stage', (req, res) => {
+app.post('/api/matters/:id/stage', async (req, res) => {
   const { currentStage, lawyerNotes, tasks } = req.body;
-  const db = loadData();
-  const index = db.matters.findIndex((m: any) => m.id === req.params.id);
+  const matters = await getMattersFromDb();
+  const index = matters.findIndex((m: any) => m.id === req.params.id);
   
   if (index === -1) return res.status(404).json({ error: 'Matter not found' });
-  const matter = db.matters[index];
+  const matter = matters[index];
   
   if (currentStage !== undefined) {
     const oldStage = matter.currentStage;
@@ -741,7 +1198,7 @@ app.post('/api/matters/:id/stage', (req, res) => {
     });
 
     // Workflow alert trigger
-    triggerWorkflowEvent(
+    await triggerWorkflowEvent(
       matter.id,
       'Stage Completed Alert',
       matter.buyerName,
@@ -765,22 +1222,21 @@ app.post('/api/matters/:id/stage', (req, res) => {
     }
   }
 
-  db.matters[index] = matter;
-  saveData(db);
-  
+  await saveMatterToDb(matter);
   res.json(matter);
 });
 
 // Documents endpoints
-app.get('/api/documents', (req, res) => {
-  const db = loadData();
-  res.json(db.documents);
+app.get('/api/documents', async (req, res) => {
+  const documents = await getDocumentsFromDb();
+  res.json(documents);
 });
 
 // Upload document (simulated database upload)
-app.post('/api/documents', (req, res) => {
+// Upload document (simulated database upload)
+app.post('/api/documents', async (req, res) => {
   const { name, category, matterId, uploadedBy, fileUrl, size } = req.body;
-  const db = loadData();
+  const matters = await getMattersFromDb();
   
   const newDoc = {
     id: `doc-${Date.now()}`,
@@ -795,72 +1251,79 @@ app.post('/api/documents', (req, res) => {
     uploadedBy: uploadedBy || 'Client'
   };
   
-  db.documents.push(newDoc);
+  await saveDocumentToDb(newDoc);
   
   // Find matter to add activity
-  const matterIdx = db.matters.findIndex((m: any) => m.id === matterId);
+  const matterIdx = matters.findIndex((m: any) => m.id === matterId);
   if (matterIdx !== -1) {
-    db.matters[matterIdx].activities.unshift({
+    const matter = matters[matterIdx];
+    matter.activities.unshift({
       id: `act-${Date.now()}`,
       date: new Date().toISOString(),
       type: 'document_upload',
       description: `Uploaded document ${newDoc.name} (${category})`,
       actor: uploadedBy
     });
+    await saveMatterToDb(matter);
   }
   
-  saveData(db);
-  logAudit(uploadedBy, 'UPLOAD_DOCUMENT', `Uploaded document ${newDoc.name} to category ${category}`, req);
+  await logAudit(uploadedBy, 'UPLOAD_DOCUMENT', `Uploaded document ${newDoc.name} to category ${category}`, req);
   res.json(newDoc);
 });
 
 // Approve/Reject Document workflow
-app.post('/api/documents/:id/status', (req, res) => {
+app.post('/api/documents/:id/status', async (req, res) => {
   const { status, reviewerNotes, staffId } = req.body;
-  const db = loadData();
-  const index = db.documents.findIndex((d: any) => d.id === req.params.id);
+  const documents = await getDocumentsFromDb();
+  const index = documents.findIndex((d: any) => d.id === req.params.id);
   
   if (index === -1) return res.status(404).json({ error: 'Document not found' });
-  const doc = db.documents[index];
+  const doc = documents[index];
   doc.status = status;
   doc.reviewerNotes = reviewerNotes;
   
-  const staff = db.users.find((u: any) => u.id === staffId) || { name: 'Attorney Office' };
+  const users = await getUsersFromDb();
+  const staff = users.find((u: any) => u.id === staffId) || { name: 'Attorney Office' };
+  
+  await saveDocumentToDb(doc);
   
   // Find matter to add activity
-  const matterIdx = db.matters.findIndex((m: any) => m.id === doc.matterId);
+  const matters = await getMattersFromDb();
+  const matterIdx = matters.findIndex((m: any) => m.id === doc.matterId);
   if (matterIdx !== -1) {
-    db.matters[matterIdx].activities.unshift({
+    const matter = matters[matterIdx];
+    matter.activities.unshift({
       id: `act-${Date.now()}`,
       date: new Date().toISOString(),
       type: status === 'approved' ? 'document_approve' : 'document_reject',
       description: `Document ${doc.name} was ${status} by ${staff.name}`,
       actor: staff.name
     });
+    await saveMatterToDb(matter);
   }
   
-  saveData(db);
-  logAudit(staffId, status === 'approved' ? 'APPROVE_DOCUMENT' : 'REJECT_DOCUMENT', `Reviewed ${doc.name} as ${status}. Notes: ${reviewerNotes || 'None'}`, req);
+  await logAudit(staffId, status === 'approved' ? 'APPROVE_DOCUMENT' : 'REJECT_DOCUMENT', `Reviewed ${doc.name} as ${status}. Notes: ${reviewerNotes || 'None'}`, req);
   res.json(doc);
 });
 
 // Tasks endpoints
-app.get('/api/tasks', (req, res) => {
-  const db = loadData();
-  res.json(db.tasks);
+app.get('/api/tasks', async (req, res) => {
+  const tasks = await getTasksFromDb();
+  res.json(tasks);
 });
 
-app.post('/api/tasks', (req, res) => {
+app.post('/api/tasks', async (req, res) => {
   const { matterId, title, description, assignedToId, dueDate, requiresDocumentCategory } = req.body;
-  const db = loadData();
-  const matter = db.matters.find((m: any) => m.id === matterId);
-  const assignee = db.users.find((u: any) => u.id === assignedToId);
+  const matters = await getMattersFromDb();
+  const users = await getUsersFromDb();
+  const matter = matters.find((m: any) => m.id === matterId);
+  const assignee = users.find((u: any) => u.id === assignedToId);
 
   const newTask = {
     id: `task-${Date.now()}`,
     matterId,
     matterNumber: matter ? matter.matterNumber : 'GENERAL',
-    propertyAddress: matter ? matter.propertyAddress : 'Pendelton Law Office',
+    propertyAddress: matter ? matter.propertyAddress : 'Masina Law Office',
     title,
     description,
     assignedToId,
@@ -871,59 +1334,66 @@ app.post('/api/tasks', (req, res) => {
     requiresDocumentCategory
   };
 
-  db.tasks.unshift(newTask);
-  saveData(db);
+  await saveTaskToDb(newTask);
   res.json(newTask);
 });
 
-app.post('/api/tasks/:id/complete', (req, res) => {
+app.post('/api/tasks/:id/complete', async (req, res) => {
   const { userId } = req.body;
-  const db = loadData();
-  const idx = db.tasks.findIndex((t: any) => t.id === req.params.id);
+  const tasks = await getTasksFromDb();
+  const idx = tasks.findIndex((t: any) => t.id === req.params.id);
   
   if (idx === -1) return res.status(404).json({ error: 'Task not found' });
-  db.tasks[idx].status = 'completed';
-  db.tasks[idx].completedAt = new Date().toISOString();
+  const task = tasks[idx];
+  task.status = 'completed';
+  task.completedAt = new Date().toISOString();
   
-  const user = db.users.find((u: any) => u.id === userId) || { name: 'System User' };
+  await saveTaskToDb(task);
+  
+  const users = await getUsersFromDb();
+  const user = users.find((u: any) => u.id === userId) || { name: 'System User' };
   
   // Find matter to add activity
-  const matterIdx = db.matters.findIndex((m: any) => m.id === db.tasks[idx].matterId);
+  const matters = await getMattersFromDb();
+  const matterIdx = matters.findIndex((m: any) => m.id === task.matterId);
   if (matterIdx !== -1) {
-    db.matters[matterIdx].activities.unshift({
+    const matter = matters[matterIdx];
+    matter.activities.unshift({
       id: `act-${Date.now()}`,
       date: new Date().toISOString(),
       type: 'task_complete',
-      description: `Task completed: "${db.tasks[idx].title}"`,
+      description: `Task completed: "${task.title}"`,
       actor: user.name
     });
+    await saveMatterToDb(matter);
   }
   
-  saveData(db);
-  logAudit(userId, 'COMPLETE_TASK', `Completed task: "${db.tasks[idx].title}"`, req);
-  res.json(db.tasks[idx]);
+  await logAudit(userId, 'COMPLETE_TASK', `Completed task: "${task.title}"`, req);
+  res.json(task);
 });
 
 // Messaging Endpoints
-app.get('/api/conversations', (req, res) => {
-  const db = loadData();
-  res.json(db.conversations);
+app.get('/api/conversations', async (req, res) => {
+  const conversations = await getConversationsFromDb();
+  res.json(conversations);
 });
 
-app.get('/api/conversations/:id/messages', (req, res) => {
-  const db = loadData();
-  const messages = db.messages.filter((m: any) => m.conversationId === req.params.id);
-  res.json(messages);
+app.get('/api/conversations/:id/messages', async (req, res) => {
+  const messages = await getMessagesFromDb();
+  const filtered = messages.filter((m: any) => m.conversationId === req.params.id);
+  res.json(filtered);
 });
 
-app.post('/api/conversations/:id/messages', (req, res) => {
+app.post('/api/conversations/:id/messages', async (req, res) => {
   const { senderId, text, fileAttachment } = req.body;
-  const db = loadData();
-  const convIdx = db.conversations.findIndex((c: any) => c.id === req.params.id);
+  const conversations = await getConversationsFromDb();
+  const convIdx = conversations.findIndex((c: any) => c.id === req.params.id);
   
   if (convIdx === -1) return res.status(404).json({ error: 'Conversation not found' });
+  const conversation = conversations[convIdx];
   
-  const sender = db.users.find((u: any) => u.id === senderId);
+  const users = await getUsersFromDb();
+  const sender = users.find((u: any) => u.id === senderId);
   if (!sender) return res.status(401).json({ error: 'Sender not authorized' });
   
   const newMessage = {
@@ -938,25 +1408,25 @@ app.post('/api/conversations/:id/messages', (req, res) => {
     isRead: false
   };
   
-  db.messages.push(newMessage);
-  db.conversations[convIdx].lastMessageText = text || 'Attachment uploaded';
-  db.conversations[convIdx].lastMessageTimestamp = newMessage.timestamp;
+  await saveMessageToDb(newMessage);
+  conversation.lastMessageText = text || 'Attachment uploaded';
+  conversation.lastMessageTimestamp = newMessage.timestamp;
+  await saveConversationToDb(conversation);
   
-  saveData(db);
   res.json(newMessage);
 });
 
 // Appointment Endpoints
-app.get('/api/appointments', (req, res) => {
-  const db = loadData();
-  res.json(db.appointments);
+app.get('/api/appointments', async (req, res) => {
+  const appointments = await getAppointmentsFromDb();
+  res.json(appointments);
 });
 
-app.post('/api/appointments', (req, res) => {
+app.post('/api/appointments', async (req, res) => {
   const { clientId, staffId, date, time, type, description } = req.body;
-  const db = loadData();
-  const client = db.users.find((u: any) => u.id === clientId) || db.users[0];
-  const staff = db.users.find((u: any) => u.id === staffId) || db.users[2];
+  const users = await getUsersFromDb();
+  const client = users.find((u: any) => u.id === clientId) || users[0];
+  const staff = users.find((u: any) => u.id === staffId) || users[2];
   
   const newAppointment = {
     id: `app-${Date.now()}`,
@@ -974,11 +1444,10 @@ app.post('/api/appointments', (req, res) => {
     description
   };
   
-  db.appointments.unshift(newAppointment);
-  saveData(db);
+  await saveAppointmentToDb(newAppointment);
   
   // Trigger automation alert
-  triggerWorkflowEvent(
+  await triggerWorkflowEvent(
     'GENERAL',
     'Appointment Booking Confirmation',
     client.name,
@@ -987,51 +1456,52 @@ app.post('/api/appointments', (req, res) => {
     'email'
   );
   
-  logAudit(clientId, 'BOOK_APPOINTMENT', `Scheduled a ${type} consultation with ${staff.name} for ${date} at ${time}`, req);
+  await logAudit(clientId, 'BOOK_APPOINTMENT', `Scheduled a ${type} consultation with ${staff.name} for ${date} at ${time}`, req);
   res.json(newAppointment);
 });
 
-app.post('/api/appointments/:id/cancel', (req, res) => {
+app.post('/api/appointments/:id/cancel', async (req, res) => {
   const { userId } = req.body;
-  const db = loadData();
-  const idx = db.appointments.findIndex((a: any) => a.id === req.params.id);
+  const appointments = await getAppointmentsFromDb();
+  const idx = appointments.findIndex((a: any) => a.id === req.params.id);
   
   if (idx === -1) return res.status(404).json({ error: 'Appointment not found' });
-  db.appointments[idx].status = 'cancelled';
+  const appt = appointments[idx];
+  appt.status = 'cancelled';
   
-  saveData(db);
-  logAudit(userId, 'CANCEL_APPOINTMENT', `Cancelled appointment scheduled for ${db.appointments[idx].date}`, req);
-  res.json(db.appointments[idx]);
+  await saveAppointmentToDb(appt);
+  await logAudit(userId, 'CANCEL_APPOINTMENT', `Cancelled appointment scheduled for ${appt.date}`, req);
+  res.json(appt);
 });
 
 // Automation Rules
-app.get('/api/automation/rules', (req, res) => {
-  const db = loadData();
-  res.json(db.automationRules || []);
+app.get('/api/automation/rules', async (req, res) => {
+  const rules = await getAutomationRulesFromDb();
+  res.json(rules || []);
 });
 
-app.post('/api/automation/rules/:id/toggle', (req, res) => {
-  const db = loadData();
-  const idx = db.automationRules.findIndex((r: any) => r.id === req.params.id);
+app.post('/api/automation/rules/:id/toggle', async (req, res) => {
+  const rules = await getAutomationRulesFromDb();
+  const idx = rules.findIndex((r: any) => r.id === req.params.id);
   if (idx !== -1) {
-    db.automationRules[idx].enabled = !db.automationRules[idx].enabled;
-    saveData(db);
-    res.json(db.automationRules[idx]);
+    rules[idx].enabled = !rules[idx].enabled;
+    await saveAutomationRuleToDb(rules[idx]);
+    res.json(rules[idx]);
   } else {
     res.status(404).json({ error: 'Automation rule not found' });
   }
 });
 
 // Automation Logs
-app.get('/api/automation/logs', (req, res) => {
-  const db = loadData();
-  res.json(db.automationLogs);
+app.get('/api/automation/logs', async (req, res) => {
+  const logs = await getAutomationLogsFromDb();
+  res.json(logs);
 });
 
 // Audit Logs
-app.get('/api/audit/logs', (req, res) => {
-  const db = loadData();
-  res.json(db.auditLogs);
+app.get('/api/audit/logs', async (req, res) => {
+  const logs = await getAuditLogsFromDb();
+  res.json(logs);
 });
 
 // Gemini AI verify document KYC upload
@@ -1120,7 +1590,7 @@ ${sellerName.toUpperCase()}
 Married out of community of property
 
 Do hereby nominate, constitute and appoint:
-CLARA CONVEY or PAMELA PARALEGAL of PENDELTON LAW FIRM,
+CLARA CONVEY or PAMELA PARALEGAL of MASINA LAW FIRM,
 
 with power of substitution, to be my lawful Attorney and Agent in my name, place and stead, to appear at the Office of the Registrar of Deeds in Johannesburg, and then and there to lodge and register transfer to:
 
@@ -1224,7 +1694,7 @@ app.get('/api/supabase/status', async (req, res) => {
 });
 
 app.get('/api/supabase/sql-schema', (req, res) => {
-  const schema = `-- SQL DDL script for Pendelton Conveyancing Matter management
+  const schema = `-- SQL DDL script for Masina Conveyancing Matter management
 -- Paste this in your Supabase SQL Editor to set up the necessary tables!
 
 CREATE TABLE IF NOT EXISTS users (
@@ -1256,7 +1726,9 @@ CREATE TABLE IF NOT EXISTS matters (
   "assignedParalegalName" TEXT,
   "currentStage" INTEGER,
   "expectedCompletionDate" TEXT,
-  status TEXT
+  status TEXT,
+  stages JSONB,
+  activities JSONB
 );
 
 CREATE TABLE IF NOT EXISTS documents (
@@ -1419,6 +1891,248 @@ app.post('/api/supabase/sync', async (req, res) => {
       report
     });
   }
+});
+
+// Supabase Authentication Endpoints
+app.post('/api/supabase/auth/signup', async (req, res) => {
+  const { email, password, name, role, phone, idNumber, address } = req.body;
+  
+  if (!email || !password || !name || !role) {
+    return res.status(400).json({ error: 'Required fields: email, password, name, role.' });
+  }
+
+  const supabase = getSupabaseClient();
+  const db = loadData();
+
+  if (supabase) {
+    try {
+      // 1. Sign up user in Supabase auth
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+            role,
+            phone,
+          }
+        }
+      });
+
+      if (signUpError) {
+        return res.status(400).json({ error: signUpError.message });
+      }
+
+      if (!data.user) {
+        return res.status(500).json({ error: 'No user data returned from Supabase Auth.' });
+      }
+
+      const uid = data.user.id;
+
+      // 2. Insert user into Supabase users table
+      const newUser = {
+        id: uid,
+        name,
+        email,
+        role,
+        phone: phone || '',
+        kycStatus: 'pending',
+        idNumber: idNumber || '',
+        address: address || '',
+        consentAccepted: true,
+        consentDate: new Date().toISOString(),
+        avatarUrl: `https://images.unsplash.com/photo-${role === 'buyer' ? '1500648767791-00dcc994a43e' : '1494790108377-be9c29b29330'}?w=150`
+      };
+
+      const { error: insertError } = await supabase
+        .from('users')
+        .upsert(newUser);
+
+      // 3. Add to local json db as well
+      const userIndex = db.users.findIndex((u: any) => u.email === email || u.id === uid);
+      if (userIndex !== -1) {
+        db.users[userIndex] = newUser;
+      } else {
+        db.users.push(newUser);
+      }
+      saveData(db);
+
+      logAudit(uid, 'USER_REGISTER_SUPABASE', `Successfully signed up and authenticated real Supabase account: ${email}`, req);
+
+      return res.json({
+        success: true,
+        user: newUser,
+        session: data.session,
+        message: 'Successfully registered on Supabase cloud and synced details.'
+      });
+
+    } catch (err: any) {
+      console.error("Supabase Auth sign up error:", err);
+      return res.status(500).json({ error: err.message || 'Supabase authentication failed.' });
+    }
+  } else {
+    // Simulated Fallback Mode
+    const simulatedId = `usr-supabase-${Date.now()}`;
+    const newUser = {
+      id: simulatedId,
+      name,
+      email,
+      role,
+      phone: phone || '',
+      kycStatus: 'pending',
+      idNumber: idNumber || '',
+      address: address || '',
+      consentAccepted: true,
+      consentDate: new Date().toISOString(),
+      avatarUrl: `https://images.unsplash.com/photo-${role === 'buyer' ? '1500648767791-00dcc994a43e' : '1494790108377-be9c29b29330'}?w=150`
+    };
+
+    // Store in simulated list of users
+    const userIndex = db.users.findIndex((u: any) => u.email === email);
+    if (userIndex !== -1) {
+      db.users[userIndex] = newUser;
+    } else {
+      db.users.push(newUser);
+    }
+    saveData(db);
+
+    logAudit(simulatedId, 'USER_REGISTER_SIMULATED', `Registered simulated Supabase account (credentials unconfigured): ${email}`, req);
+
+    return res.json({
+      success: true,
+      user: newUser,
+      simulated: true,
+      message: 'Created simulated profile. Provide SUPABASE_ANON_KEY to run live authentication.'
+    });
+  }
+});
+
+app.post('/api/supabase/auth/login', async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password are required.' });
+  }
+
+  const supabase = getSupabaseClient();
+  const db = loadData();
+
+  if (supabase) {
+    try {
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (signInError) {
+        return res.status(400).json({ error: signInError.message });
+      }
+
+      if (!data.user) {
+        return res.status(500).json({ error: 'Authentication returned an empty user.' });
+      }
+
+      const uid = data.user.id;
+
+      // Try to fetch user profile from Supabase users table
+      let targetUser: any = null;
+      try {
+        const { data: userProfile, error: fetchError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', uid)
+          .single();
+        if (!fetchError && userProfile) {
+          targetUser = userProfile;
+        }
+      } catch (e) {}
+
+      // Fallback: if not in Supabase database but in auth, construct or look up locally
+      if (!targetUser) {
+        const localUser = db.users.find((u: any) => u.email === email);
+        if (localUser) {
+          targetUser = { ...localUser, id: uid };
+        } else {
+          targetUser = {
+            id: uid,
+            name: data.user.user_metadata?.name || email.split('@')[0],
+            email,
+            role: data.user.user_metadata?.role || 'buyer',
+            phone: data.user.user_metadata?.phone || '',
+            kycStatus: 'pending',
+            idNumber: '',
+            address: '',
+            consentAccepted: true,
+            consentDate: new Date().toISOString(),
+            avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150'
+          };
+        }
+        
+        try {
+          await supabase.from('users').upsert(targetUser);
+        } catch (e) {}
+      }
+
+      // Sync back to local db.json
+      const userIndex = db.users.findIndex((u: any) => u.email === email || u.id === uid);
+      if (userIndex !== -1) {
+        db.users[userIndex] = targetUser;
+      } else {
+        db.users.push(targetUser);
+      }
+      saveData(db);
+
+      logAudit(uid, 'USER_LOGIN_SUPABASE', `Successfully authenticated with real Supabase session: ${email}`, req);
+
+      return res.json({
+        success: true,
+        user: targetUser,
+        session: data.session,
+        message: 'Successfully authenticated with real cloud database.'
+      });
+
+    } catch (err: any) {
+      console.error("Supabase Auth login error:", err);
+      return res.status(500).json({ error: err.message || 'Supabase authentication failed.' });
+    }
+  } else {
+    // Simulated login fallback
+    const user = db.users.find((u: any) => u.email === email);
+
+    if (user) {
+      logAudit(user.id, 'USER_LOGIN_SIMULATED', `Logged in via simulated Supabase account (credentials unconfigured): ${email}`, req);
+      return res.json({
+        success: true,
+        user,
+        simulated: true,
+        message: 'Simulated login succeeded. Provide SUPABASE_ANON_KEY to run live authentication.'
+      });
+    } else {
+      // Create user on-the-fly for quick onboarding of default accounts
+      const matchedSampleUser = INITIAL_DATA.users.find(u => u.email === email);
+      if (matchedSampleUser) {
+        db.users.push(matchedSampleUser);
+        saveData(db);
+        return res.json({
+          success: true,
+          user: matchedSampleUser,
+          simulated: true,
+          message: 'Simulated login succeeded.'
+        });
+      }
+
+      return res.status(401).json({ error: 'Account not found. Please sign up to create a simulated profile!' });
+    }
+  }
+});
+
+app.post('/api/supabase/auth/logout', (req, res) => {
+  const { userId } = req.body;
+  if (userId) {
+    const db = loadData();
+    logAudit(userId, 'USER_LOGOUT_SUPABASE', `User logged out`, req);
+  }
+  res.json({ success: true });
 });
 
 // Wildcard API 404 fallback to prevent Vite SPA HTML fallback returning 200 OK for missing endpoints

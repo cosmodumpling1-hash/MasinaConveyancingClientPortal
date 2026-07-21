@@ -1,7 +1,8 @@
 import React from 'react';
 import { 
   Building2, FileText, ClipboardList, MessageSquare, Calendar, Shield, LayoutDashboard, 
-  Users, CheckSquare, Settings, Scale, AlertCircle, PlayCircle, PlusCircle, ArrowRight, BookOpen, Clock
+  Users, CheckSquare, Settings, Scale, AlertCircle, PlayCircle, PlusCircle, ArrowRight, BookOpen, Clock,
+  Lock, Database
 } from 'lucide-react';
 
 import { User, PropertyMatter, Document, Task, Conversation, Message, Appointment, AuditLog, AutomationRule, AutomationLog } from './types';
@@ -14,6 +15,8 @@ import MessagingHub from './components/MessagingHub';
 import AppointmentCalendar from './components/AppointmentCalendar';
 import AnalyticsDashboard from './components/AnalyticsDashboard';
 import AdminPanel from './components/AdminPanel';
+import SupabaseAuthCenter from './components/SupabaseAuthCenter';
+import MasinaLogo from './components/MasinaLogo';
 
 export default function App() {
   // Session context states
@@ -102,10 +105,10 @@ export default function App() {
       setAllUsers([
         { id: 'usr-client-1', name: 'John Buyer', email: 'john.buyer@gmail.com', role: 'buyer', kycStatus: 'pending', idNumber: '8907125012083', address: '14 Blue Crane Estate, Midrand', consentAccepted: true },
         { id: 'usr-client-2', name: 'Sarah Seller', email: 'sarah.seller@yahoo.com', role: 'seller', kycStatus: 'verified', idNumber: '7504020084089', address: '124 Villa Rosa, Sandton', consentAccepted: true },
-        { id: 'usr-attorney-1', name: 'Arthur Pendelton', email: 'arthur@pendeltonlaw.co.za', role: 'attorney', kycStatus: 'verified', consentAccepted: true },
-        { id: 'usr-convey-1', name: 'Clara Convey', email: 'clara@pendeltonlaw.co.za', role: 'conveyancer', kycStatus: 'verified', consentAccepted: true },
-        { id: 'usr-paralegal-1', name: 'Pamela Paralegal', email: 'pamela@pendeltonlaw.co.za', role: 'paralegal', kycStatus: 'verified', consentAccepted: true },
-        { id: 'usr-admin-1', name: 'Admin Alice', email: 'alice@pendeltonlaw.co.za', role: 'admin', kycStatus: 'verified', consentAccepted: true }
+        { id: 'usr-attorney-1', name: 'Arthur Masina', email: 'arthur@masinalaw.co.za', role: 'attorney', kycStatus: 'verified', consentAccepted: true },
+        { id: 'usr-convey-1', name: 'Clara Convey', email: 'clara@masinalaw.co.za', role: 'conveyancer', kycStatus: 'verified', consentAccepted: true },
+        { id: 'usr-paralegal-1', name: 'Pamela Paralegal', email: 'pamela@masinalaw.co.za', role: 'paralegal', kycStatus: 'verified', consentAccepted: true },
+        { id: 'usr-admin-1', name: 'Admin Alice', email: 'alice@masinalaw.co.za', role: 'admin', kycStatus: 'verified', consentAccepted: true }
       ]);
 
       // Pull message thread for current active conversation
@@ -323,12 +326,35 @@ export default function App() {
     }
   };
 
-  if (loading || !currentUser) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-6 text-indigo-300 font-mono">
-        <div className="h-12 w-12 rounded-full border-4 border-indigo-500 border-t-transparent animate-spin mb-4"></div>
-        <p className="text-sm font-semibold tracking-wide">PENDELTON DEEDS REGISTRY CORE LOADING...</p>
-        <p className="text-[10px] text-slate-500 mt-1">Establishing SECURE OAUTH2 & FICA Verification instances</p>
+      <div className="min-h-screen bg-brand-navy flex flex-col items-center justify-center p-6 text-emerald-400 font-mono">
+        <div className="h-12 w-12 rounded-full border-4 border-brand-gold border-t-transparent animate-spin mb-4"></div>
+        <p className="text-sm font-bold tracking-wide">MASINA DEEDS REGISTRY CORE LOADING...</p>
+        <p className="text-[10px] text-slate-400 mt-1">Establishing SECURE OAUTH2 & FICA Verification instances</p>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <div className="min-h-screen bg-brand-cream flex flex-col items-center justify-center p-6 text-slate-800">
+        <div className="w-full max-w-2xl space-y-6">
+          <div className="flex flex-col items-center justify-center text-center mb-4">
+            <MasinaLogo size="lg" />
+          </div>
+          <SupabaseAuthCenter 
+            currentUser={currentUser}
+            onLoginSuccess={(user) => {
+              setCurrentUser(user);
+              refreshAllContexts(user.id);
+            }}
+            onLogoutSuccess={() => {
+              setCurrentUser(null);
+            }}
+            allUsers={allUsers}
+          />
+        </div>
       </div>
     );
   }
@@ -345,6 +371,7 @@ export default function App() {
     { id: 'tasks', label: 'Action Tasks', icon: ClipboardList },
     { id: 'messages', label: 'Secure Message', icon: MessageSquare },
     { id: 'appointments', label: 'Consultation Calendar', icon: Calendar },
+    { id: 'supabase-auth', label: 'Identity & Supabase Auth', icon: Lock },
     { id: 'admin', label: 'System Admin Panel', icon: Shield }
   ] : [
     { id: 'dashboard', label: 'Active Matter Tracker', icon: Building2 },
@@ -352,7 +379,8 @@ export default function App() {
     { id: 'documents', label: 'Secure Document Vault', icon: FileText },
     { id: 'tasks', label: 'My Action Tasks', icon: ClipboardList },
     { id: 'messages', label: 'Message Attorney', icon: MessageSquare },
-    { id: 'appointments', label: 'Book Consultation', icon: Calendar }
+    { id: 'appointments', label: 'Book Consultation', icon: Calendar },
+    { id: 'supabase-auth', label: 'Identity & Supabase Auth', icon: Lock }
   ];
 
   return (
@@ -362,7 +390,16 @@ export default function App() {
         currentUser={currentUser} 
         allUsers={allUsers} 
         onSwitchUser={handleSwitchUser} 
-        onLogout={() => {}} 
+        onLogout={async () => {
+          try {
+            await fetch('/api/supabase/auth/logout', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ userId: currentUser?.id })
+            });
+          } catch (e) {}
+          setCurrentUser(null);
+        }} 
       />
 
       <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 flex-1 flex flex-col lg:flex-row gap-8">
@@ -435,14 +472,35 @@ export default function App() {
         {/* Right Main Core Visual Pane */}
         <main className="flex-1 min-w-0">
           
+          {/* Supabase Security Hub View */}
+          {activeTab === 'supabase-auth' && (
+            <div className="space-y-6">
+              <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+                <h2 className="text-lg font-bold text-slate-900">Supabase Security Hub</h2>
+                <p className="text-xs text-slate-500 mt-1">Authenticate sessions, register compliant client profiles, and check synchronization pipelines.</p>
+              </div>
+              <SupabaseAuthCenter 
+                currentUser={currentUser}
+                onLoginSuccess={(user) => {
+                  setCurrentUser(user);
+                  refreshAllContexts(user.id);
+                }}
+                onLogoutSuccess={() => {
+                  setCurrentUser(null);
+                }}
+                allUsers={allUsers}
+              />
+            </div>
+          )}
+
           {/* STAFF VIEWS */}
-          {isStaff && (
+          {isStaff && activeTab !== 'supabase-auth' && (
             <>
               {activeTab === 'dashboard' && (
                 <div className="space-y-6">
                   <div className="bg-white border border-slate-200/60 p-6 rounded-2xl shadow-premium flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
-                      <span className="text-xs text-brand-gold-dark font-bold uppercase tracking-wider block font-sans">PENDELTON LAW ADVISORY</span>
+                      <span className="text-xs text-[#5F7E44] font-bold uppercase tracking-wider block font-sans">MASINA LAW ADVISORY</span>
                       <h2 className="text-2xl font-serif font-bold tracking-wide text-brand-navy mt-1">Welcome back, {currentUser.name}</h2>
                       <p className="text-xs text-slate-500 mt-1 font-sans">Track case completion, audit submissions, and manage SARS declarations seamlessly.</p>
                     </div>
@@ -552,7 +610,7 @@ export default function App() {
           )}
 
           {/* CLIENT VIEWS */}
-          {!isStaff && (
+          {!isStaff && activeTab !== 'supabase-auth' && (
             <>
               {activeTab === 'dashboard' && activeMatter && (
                 <div className="space-y-6">

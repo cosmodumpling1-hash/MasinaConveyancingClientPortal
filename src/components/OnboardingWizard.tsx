@@ -136,13 +136,13 @@ export default function OnboardingWizard({ currentUser, onUpdateUser, onOpenMatt
   };
 
   const generatedFingerprint = consent.electronicSignatureName
-    ? `PENDELTON-SECURE-SHA256:89a4c8e7${consent.electronicSignatureName.length * 3}d10f8821`
+    ? `MASINA-SECURE-SHA256:89a4c8e7${consent.electronicSignatureName.length * 3}d10f8821`
     : '';
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200/60 shadow-premium overflow-hidden max-w-4xl mx-auto animate-fade-in" id="onboarding-wizard">
       {/* Banner / Header */}
-      <div className="bg-[#0B192C] text-white p-6 sm:p-8 flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800">
+      <div className="bg-brand-navy text-white p-6 sm:p-8 flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800">
         <div>
           <div className="flex items-center space-x-2 text-brand-gold font-bold uppercase text-xs tracking-wider">
             <Fingerprint className="h-4 w-4" />
@@ -161,27 +161,27 @@ export default function OnboardingWizard({ currentUser, onUpdateUser, onOpenMatt
       {/* Step Indicator Progress Bar */}
       <div className="bg-brand-cream/10 border-b border-slate-200/60 px-6 sm:px-8 py-3.5 flex justify-between items-center text-xs font-semibold text-slate-400">
         <div className={`flex items-center space-x-1.5 ${step >= 1 ? 'text-brand-gold-dark' : ''}`}>
-          <div className={`h-5 w-5 rounded-full flex items-center justify-center text-[10px] ${step >= 1 ? 'bg-[#0B192C] text-white font-bold ring-1 ring-brand-gold/40' : 'bg-slate-200'}`}>1</div>
+          <div className={`h-5 w-5 rounded-full flex items-center justify-center text-[10px] ${step >= 1 ? 'bg-brand-navy text-white font-bold ring-1 ring-brand-gold/40' : 'bg-slate-200'}`}>1</div>
           <span className="font-sans">Personal Data</span>
         </div>
         <div className="h-0.5 bg-slate-200 flex-1 mx-3 hidden sm:block"></div>
         <div className={`flex items-center space-x-1.5 ${step >= 2 ? 'text-brand-gold-dark' : ''}`}>
-          <div className={`h-5 w-5 rounded-full flex items-center justify-center text-[10px] ${step >= 2 ? 'bg-[#0B192C] text-white font-bold ring-1 ring-brand-gold/40' : 'bg-slate-200'}`}>2</div>
+          <div className={`h-5 w-5 rounded-full flex items-center justify-center text-[10px] ${step >= 2 ? 'bg-brand-navy text-white font-bold ring-1 ring-brand-gold/40' : 'bg-slate-200'}`}>2</div>
           <span className="font-sans">Property Matter</span>
         </div>
         <div className="h-0.5 bg-slate-200 flex-1 mx-3 hidden sm:block"></div>
         <div className={`flex items-center space-x-1.5 ${step >= 3 ? 'text-brand-gold-dark' : ''}`}>
-          <div className={`h-5 w-5 rounded-full flex items-center justify-center text-[10px] ${step >= 3 ? 'bg-[#0B192C] text-white font-bold ring-1 ring-brand-gold/40' : 'bg-slate-200'}`}>3</div>
+          <div className={`h-5 w-5 rounded-full flex items-center justify-center text-[10px] ${step >= 3 ? 'bg-brand-navy text-white font-bold ring-1 ring-brand-gold/40' : 'bg-slate-200'}`}>3</div>
           <span className="font-sans">Consent</span>
         </div>
         <div className="h-0.5 bg-slate-200 flex-1 mx-3 hidden sm:block"></div>
         <div className={`flex items-center space-x-1.5 ${step >= 4 ? 'text-brand-gold-dark' : ''}`}>
-          <div className={`h-5 w-5 rounded-full flex items-center justify-center text-[10px] ${step >= 4 ? 'bg-[#0B192C] text-white font-bold ring-1 ring-brand-gold/40' : 'bg-slate-200'}`}>4</div>
+          <div className={`h-5 w-5 rounded-full flex items-center justify-center text-[10px] ${step >= 4 ? 'bg-brand-navy text-white font-bold ring-1 ring-brand-gold/40' : 'bg-slate-200'}`}>4</div>
           <span className="font-sans">KYC ID Scan</span>
         </div>
         <div className="h-0.5 bg-slate-200 flex-1 mx-3 hidden sm:block"></div>
         <div className={`flex items-center space-x-1.5 ${step >= 5 ? 'text-brand-gold-dark' : ''}`}>
-          <div className={`h-5 w-5 rounded-full flex items-center justify-center text-[10px] ${step >= 5 ? 'bg-[#0B192C] text-white font-bold ring-1 ring-brand-gold/40' : 'bg-slate-200'}`}>5</div>
+          <div className={`h-5 w-5 rounded-full flex items-center justify-center text-[10px] ${step >= 5 ? 'bg-brand-navy text-white font-bold ring-1 ring-brand-gold/40' : 'bg-slate-200'}`}>5</div>
           <span className="font-sans">Complete</span>
         </div>
       </div>
@@ -191,7 +191,7 @@ export default function OnboardingWizard({ currentUser, onUpdateUser, onOpenMatt
         {step === 1 && (
           <form onSubmit={handlePersonalSubmit} className="space-y-6">
             <div className="border-l-4 border-brand-gold bg-brand-cream/10 p-4 rounded-r-lg">
-              <h3 className="text-sm font-serif font-bold text-[#0B192C] flex items-center space-x-1.5">
+              <h3 className="text-sm font-serif font-bold text-brand-navy flex items-center space-x-1.5">
                 <Shield className="h-4.5 w-4.5 text-brand-gold-dark" />
                 <span>Verify Your Contact & Registration Details</span>
               </h3>
@@ -253,7 +253,7 @@ export default function OnboardingWizard({ currentUser, onUpdateUser, onOpenMatt
             <div className="flex justify-end pt-4 border-t border-slate-100">
               <button
                 type="submit"
-                className="bg-[#0B192C] hover:bg-[#0B192C]/95 border border-slate-800 text-white font-bold text-sm px-6 py-2.5 rounded-lg transition-colors flex items-center space-x-1.5 shadow-sm cursor-pointer"
+                className="bg-brand-navy hover:bg-brand-navy/95 border border-slate-800 text-white font-bold text-sm px-6 py-2.5 rounded-lg transition-colors flex items-center space-x-1.5 shadow-sm cursor-pointer"
               >
                 <span>Proceed to Property Setup</span>
                 <Check className="h-4 w-4 text-brand-gold" />
@@ -266,7 +266,7 @@ export default function OnboardingWizard({ currentUser, onUpdateUser, onOpenMatt
         {step === 2 && (
           <form onSubmit={handlePropertySubmit} className="space-y-6">
             <div className="border-l-4 border-brand-gold bg-brand-cream/10 p-4 rounded-r-lg">
-              <h3 className="text-sm font-serif font-bold text-[#0B192C]">
+              <h3 className="text-sm font-serif font-bold text-brand-navy">
                 Property Transaction Detail Declaration
               </h3>
               <p className="text-xs text-slate-600 mt-1">
@@ -339,13 +339,13 @@ export default function OnboardingWizard({ currentUser, onUpdateUser, onOpenMatt
               <button
                 type="button"
                 onClick={() => setStep(1)}
-                className="text-slate-600 hover:text-[#0B192C] font-bold text-sm px-4 py-2 cursor-pointer"
+                className="text-slate-600 hover:text-brand-navy font-bold text-sm px-4 py-2 cursor-pointer"
               >
                 Back
               </button>
               <button
                 type="submit"
-                className="bg-[#0B192C] hover:bg-[#0B192C]/95 border border-slate-800 text-white font-bold text-sm px-6 py-2.5 rounded-lg transition-colors flex items-center space-x-1.5 shadow-sm cursor-pointer"
+                className="bg-brand-navy hover:bg-brand-navy/95 border border-slate-800 text-white font-bold text-sm px-6 py-2.5 rounded-lg transition-colors flex items-center space-x-1.5 shadow-sm cursor-pointer"
               >
                 <span>Proceed to Compliance Consent</span>
                 <Check className="h-4 w-4 text-brand-gold" />
@@ -358,7 +358,7 @@ export default function OnboardingWizard({ currentUser, onUpdateUser, onOpenMatt
         {step === 3 && (
           <form onSubmit={handleConsentSubmit} className="space-y-6">
             <div className="bg-brand-cream/10 rounded-xl border border-slate-200/60 p-5 space-y-4 shadow-sm">
-              <h3 className="text-sm font-serif font-bold text-[#0B192C] flex items-center space-x-1.5 uppercase tracking-wider">
+              <h3 className="text-sm font-serif font-bold text-brand-navy flex items-center space-x-1.5 uppercase tracking-wider">
                 <FileText className="h-4.5 w-4.5 text-brand-gold-dark" />
                 <span>POPIA / GDPR Regulatory Policy Act & E-Sign Declarations</span>
               </h3>
@@ -366,7 +366,7 @@ export default function OnboardingWizard({ currentUser, onUpdateUser, onOpenMatt
               <div className="text-xs text-slate-600 space-y-3 max-h-56 overflow-y-auto pr-2 leading-relaxed border-b border-slate-200/60 pb-3">
                 <p className="font-semibold text-slate-800">1. POPI ACT COMPLIANCE (South Africa):</p>
                 <p>
-                  By checking below, you authorize Pendelton Law Firm to collect, store, and process your personal details (including identity document copies, tax records, and contact details) solely to facilitate property registry and transfer procedures with SARS and the Deeds Office. Under POPIA, we maintain bank-grade file encryption and zero external data sharing.
+                  By checking below, you authorize Masina Law Firm to collect, store, and process your personal details (including identity document copies, tax records, and contact details) solely to facilitate property registry and transfer procedures with SARS and the Deeds Office. Under POPIA, we maintain bank-grade file encryption and zero external data sharing.
                 </p>
                 <p className="font-semibold text-slate-800">2. GDPR COMPLIANCE (European Union General Data Protection):</p>
                 <p>
@@ -451,13 +451,13 @@ export default function OnboardingWizard({ currentUser, onUpdateUser, onOpenMatt
               <button
                 type="button"
                 onClick={() => setStep(2)}
-                className="text-slate-600 hover:text-[#0B192C] font-bold text-sm px-4 py-2 cursor-pointer"
+                className="text-slate-600 hover:text-brand-navy font-bold text-sm px-4 py-2 cursor-pointer"
               >
                 Back
               </button>
               <button
                 type="submit"
-                className="bg-[#0B192C] hover:bg-[#0B192C]/95 border border-slate-800 text-white font-bold text-sm px-6 py-2.5 rounded-lg transition-colors flex items-center space-x-1.5 shadow-sm cursor-pointer"
+                className="bg-brand-navy hover:bg-brand-navy/95 border border-slate-800 text-white font-bold text-sm px-6 py-2.5 rounded-lg transition-colors flex items-center space-x-1.5 shadow-sm cursor-pointer"
               >
                 <span>Authorize & Continue</span>
                 <Check className="h-4 w-4 text-brand-gold" />
@@ -471,7 +471,7 @@ export default function OnboardingWizard({ currentUser, onUpdateUser, onOpenMatt
           <div className="space-y-6">
             <div className="border-l-4 border-brand-gold bg-brand-cream/10 p-4 rounded-r-lg flex justify-between items-start">
               <div>
-                <h3 className="text-sm font-serif font-bold text-[#0B192C] flex items-center space-x-1.5">
+                <h3 className="text-sm font-serif font-bold text-brand-navy flex items-center space-x-1.5">
                   <Sparkles className="h-4.5 w-4.5 text-brand-gold-dark animate-pulse" />
                   <span>Interactive FICA KYC Document Verification Scan</span>
                 </h3>
@@ -537,7 +537,7 @@ export default function OnboardingWizard({ currentUser, onUpdateUser, onOpenMatt
                     type="button"
                     disabled={loading || !simulatedDoc.name}
                     onClick={handleAIKYCVerify}
-                    className="w-full bg-[#0B192C] hover:bg-[#0B192C]/95 disabled:bg-slate-800 disabled:text-slate-600 text-white font-bold text-xs py-2 rounded-lg transition-colors flex items-center justify-center space-x-1.5 border border-slate-800 shadow-sm cursor-pointer"
+                    className="w-full bg-brand-navy hover:bg-brand-navy/95 disabled:bg-slate-800 disabled:text-slate-600 text-white font-bold text-xs py-2 rounded-lg transition-colors flex items-center justify-center space-x-1.5 border border-slate-800 shadow-sm cursor-pointer"
                   >
                     {loading ? (
                       <>
@@ -603,7 +603,7 @@ export default function OnboardingWizard({ currentUser, onUpdateUser, onOpenMatt
                     type="button"
                     disabled={!verificationResult}
                     onClick={() => setStep(5)}
-                    className="bg-[#0B192C] hover:bg-[#0B192C]/95 disabled:bg-slate-200 disabled:text-slate-400 text-white border border-slate-800 font-bold text-xs px-5 py-2 rounded-lg transition-colors cursor-pointer"
+                    className="bg-brand-navy hover:bg-brand-navy/95 disabled:bg-slate-200 disabled:text-slate-400 text-white border border-slate-800 font-bold text-xs px-5 py-2 rounded-lg transition-colors cursor-pointer"
                   >
                     Continue to Summary
                   </button>
@@ -615,7 +615,7 @@ export default function OnboardingWizard({ currentUser, onUpdateUser, onOpenMatt
               <button
                 type="button"
                 onClick={() => setStep(3)}
-                className="text-slate-600 hover:text-[#0B192C] font-bold text-sm px-4 py-2 cursor-pointer"
+                className="text-slate-600 hover:text-brand-navy font-bold text-sm px-4 py-2 cursor-pointer"
               >
                 Back
               </button>
@@ -631,7 +631,7 @@ export default function OnboardingWizard({ currentUser, onUpdateUser, onOpenMatt
             </div>
 
             <div className="space-y-2 max-w-lg mx-auto">
-              <h3 className="text-xl sm:text-2xl font-serif font-bold text-[#0B192C]">Onboarding & Consent Completed!</h3>
+              <h3 className="text-xl sm:text-2xl font-serif font-bold text-brand-navy">Onboarding & Consent Completed!</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
                 Thank you, <strong>{personalDetails.fullName}</strong>. Your POPIA, GDPR disclosures, electronic signature, and FICA identity scan are officially secured under biometric trust. We are now ready to establish your active conveyancing property matter!
               </p>
@@ -659,7 +659,7 @@ export default function OnboardingWizard({ currentUser, onUpdateUser, onOpenMatt
               <button
                 type="button"
                 onClick={handleCompleteOnboarding}
-                className="w-full bg-[#0B192C] hover:bg-[#0B192C]/95 border border-slate-800 text-white font-serif font-bold tracking-wide text-sm py-3 rounded-xl transition-all shadow-premium flex items-center justify-center space-x-2 cursor-pointer"
+                className="w-full bg-brand-navy hover:bg-brand-navy/95 border border-slate-800 text-white font-serif font-bold tracking-wide text-sm py-3 rounded-xl transition-all shadow-premium flex items-center justify-center space-x-2 cursor-pointer"
               >
                 <span>Initialize Conveyancing Matter Case File</span>
                 <Check className="h-4 w-4 text-brand-gold" />

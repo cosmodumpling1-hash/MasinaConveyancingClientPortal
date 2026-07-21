@@ -124,7 +124,7 @@ export default function AdminPanel({
       consentAccepted: true
     });
     setNewTeam({ name: '', email: '', role: 'paralegal', phone: '' });
-    alert("New team member registered in Pendelton database successfully.");
+    alert("New team member registered in Masina database successfully.");
   };
 
   const handleDraftTemplate = async () => {
@@ -239,7 +239,7 @@ export default function AdminPanel({
               <span className="text-[10px] text-slate-400 font-mono">Immutable cryptographic records active</span>
             </div>
 
-            <div className="bg-[#0B192C] text-slate-300 rounded-xl p-4 font-mono text-[11px] h-96 overflow-y-auto border border-slate-800 space-y-2.5 shadow-inner">
+            <div className="bg-brand-navy text-slate-300 rounded-xl p-4 font-mono text-[11px] h-96 overflow-y-auto border border-slate-800 space-y-2.5 shadow-inner">
               {auditLogs.map(log => (
                 <div key={log.id} className="border-b border-slate-900 pb-2 hover:bg-slate-900/40 transition-colors">
                   <div className="flex flex-wrap justify-between text-[10px] text-brand-gold font-bold">
@@ -458,7 +458,7 @@ export default function AdminPanel({
                       required
                       value={newTeam.email}
                       onChange={(e) => setNewTeam({ ...newTeam, email: e.target.value })}
-                      placeholder="richard@pendeltonlaw.co.za"
+                      placeholder="richard@masinalaw.co.za"
                       className="w-full bg-white border border-slate-200 rounded px-2.5 py-1.5 text-xs focus:ring-1 focus:ring-brand-gold focus:outline-none"
                     />
                   </div>
@@ -553,7 +553,7 @@ export default function AdminPanel({
                   <span>Supabase Real-Time Sync Hub</span>
                 </h3>
                 <p className="text-xs text-slate-500 mt-1">
-                  Connect and synchronize Pendelton Law database structures with your cloud-hosted Supabase PostgreSQL instance.
+                  Connect and synchronize Masina Law database structures with your cloud-hosted Supabase PostgreSQL instance.
                 </p>
               </div>
               <button
@@ -650,7 +650,7 @@ export default function AdminPanel({
                     <div>
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono">DATA SYNCHRONIZER</span>
                       <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
-                        Export existing conveyancing matters, documents, rules, and security audits from Pendelton local JSON directly into Supabase tables.
+                        Export existing conveyancing matters, documents, rules, and security audits from Masina local JSON directly into Supabase tables.
                       </p>
                     </div>
 
@@ -772,7 +772,7 @@ export default function AdminPanel({
                     </button>
                   </div>
 
-                  <div className="bg-[#0B192C] text-slate-300 rounded-xl p-4 font-mono text-[10px] h-72 overflow-y-auto border border-slate-800 space-y-1.5 shadow-inner leading-relaxed font-mono">
+                  <div className="bg-brand-navy text-slate-300 rounded-xl p-4 font-mono text-[10px] h-72 overflow-y-auto border border-slate-800 space-y-1.5 shadow-inner leading-relaxed font-mono">
                     <pre className="whitespace-pre-wrap">{supabaseSql}</pre>
                   </div>
                 </div>

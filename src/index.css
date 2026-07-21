@@ -1,27 +1,28 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Marcellus&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Marcellus&family=JetBrains+Mono:wght@400;500&family=Montserrat:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Marcellus", Georgia, serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-logo: "Montserrat", "Inter", sans-serif;
 
   /* Custom Professional Polish Palette */
-  --color-brand-navy: #0B192C;
-  --color-brand-blue-slate: #1E293B;
-  --color-brand-gold: #C5A880;
-  --color-brand-gold-dark: #A37E36;
-  --color-brand-gold-light: #FDFBF7;
-  --color-brand-cream: #FAF9F6;
+  --color-brand-navy: #112815; /* Elegant rich dark forest green */
+  --color-brand-blue-slate: #1E3823; /* Forest slate green */
+  --color-brand-gold: #76935C; /* Premium sage/light green */
+  --color-brand-gold-dark: #3C5229; /* Mossy olive dark green */
+  --color-brand-gold-light: #F4F8F2; /* Soft mint/sage tint */
+  --color-brand-cream: #FAFBF7; /* Soft cream off-white with hint of sage */
   --color-brand-border: rgba(226, 232, 240, 0.8);
   
   --shadow-premium: 0 4px 20px rgba(0, 0, 0, 0.02), 0 2px 8px rgba(0, 0, 0, 0.02);
-  --shadow-hover: 0 10px 30px rgba(11, 25, 44, 0.04), 0 4px 12px rgba(11, 25, 44, 0.02);
+  --shadow-hover: 0 10px 30px rgba(17, 40, 21, 0.04), 0 4px 12px rgba(17, 40, 21, 0.02);
 }
 
 /* Base style enhancements */
 body {
-  background-color: #FAF9F6;
+  background-color: #FAFBF7;
   font-family: var(--font-sans);
 }
 

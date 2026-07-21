@@ -16,7 +16,7 @@ export default function AnalyticsDashboard({ matters, documents, tasks }: Analyt
 
   // Staff workload compilation
   const lawyerWorkloads = [
-    { name: 'Arthur Pendelton', role: 'Attorney', mattersCount: 4, tasksCount: 5, rating: 4.9 },
+    { name: 'Arthur Masina', role: 'Attorney', mattersCount: 4, tasksCount: 5, rating: 4.9 },
     { name: 'Clara Convey', role: 'Conveyancer', mattersCount: 2, tasksCount: 3, rating: 4.8 },
     { name: 'Pamela Paralegal', role: 'Paralegal', mattersCount: 3, tasksCount: 8, rating: 4.7 }
   ];
@@ -87,30 +87,30 @@ export default function AnalyticsDashboard({ matters, documents, tasks }: Analyt
           <div className="p-4 bg-brand-cream/15 rounded-xl border border-slate-200/50">
             <svg viewBox="0 0 450 160" className="w-full h-auto">
               {/* Grid lines */}
-              <line x1="60" y1="20" x2="420" y2="20" stroke="#f1e9db" strokeDasharray="3,3" />
-              <line x1="60" y1="60" x2="420" y2="60" stroke="#f1e9db" strokeDasharray="3,3" />
-              <line x1="60" y1="100" x2="420" y2="100" stroke="#f1e9db" strokeDasharray="3,3" />
-              <line x1="60" y1="140" x2="420" y2="140" stroke="#c5a880" strokeWidth="1.5" />
+              <line x1="60" y1="20" x2="420" y2="20" stroke="#FAFBF7" strokeDasharray="3,3" />
+              <line x1="60" y1="60" x2="420" y2="60" stroke="#FAFBF7" strokeDasharray="3,3" />
+              <line x1="60" y1="100" x2="420" y2="100" stroke="#FAFBF7" strokeDasharray="3,3" />
+              <line x1="60" y1="140" x2="420" y2="140" stroke="#76935C" strokeWidth="1.5" />
 
               {/* Data Bars */}
               {/* Bar 1: Arthur */}
-              <rect x="90" y="40" width="36" height="100" rx="2" fill="#0B192C" className="transition-all hover:opacity-90" />
-              <rect x="130" y="70" width="12" height="70" rx="1.5" fill="#C5A880" />
+              <rect x="90" y="40" width="36" height="100" rx="2" fill="#112815" className="transition-all hover:opacity-90" />
+              <rect x="130" y="70" width="12" height="70" rx="1.5" fill="#76935C" />
 
               {/* Bar 2: Clara */}
               <rect x="210" y="80" width="36" height="60" rx="2" fill="#2d3748" className="transition-all hover:opacity-90" />
-              <rect x="250" y="100" width="12" height="40" rx="1.5" fill="#C5A880" opacity="0.6" />
+              <rect x="250" y="100" width="12" height="40" rx="1.5" fill="#76935C" opacity="0.6" />
 
               {/* Bar 3: Pamela */}
               <rect x="330" y="50" width="36" height="90" rx="2" fill="#1e293b" className="transition-all hover:opacity-90" />
-              <rect x="370" y="30" width="12" height="110" rx="1.5" fill="#C5A880" />
+              <rect x="370" y="30" width="12" height="110" rx="1.5" fill="#76935C" />
 
               {/* Axis Labels */}
-              <text x="115" y="155" fill="#0B192C" fontSize="10" textAnchor="middle" fontWeight="bold">Arthur (Atty)</text>
-              <text x="235" y="155" fill="#0B192C" fontSize="10" textAnchor="middle" fontWeight="bold">Clara (Convey)</text>
-              <text x="355" y="155" fill="#0B192C" fontSize="10" textAnchor="middle" fontWeight="bold">Pamela (Para)</text>
+              <text x="115" y="155" fill="#112815" fontSize="10" textAnchor="middle" fontWeight="bold">Arthur (Atty)</text>
+              <text x="235" y="155" fill="#112815" fontSize="10" textAnchor="middle" fontWeight="bold">Clara (Convey)</text>
+              <text x="355" y="155" fill="#112815" fontSize="10" textAnchor="middle" fontWeight="bold">Pamela (Para)</text>
               
-              <text x="45" y="24" fill="#c5a880" fontSize="8" textAnchor="end" fontWeight="bold">Max limit</text>
+              <text x="45" y="24" fill="#76935C" fontSize="8" textAnchor="end" fontWeight="bold">Max limit</text>
               <text x="45" y="64" fill="#a1a1aa" fontSize="8" textAnchor="end">Moderate</text>
               <text x="45" y="104" fill="#a1a1aa" fontSize="8" textAnchor="end">Low load</text>
             </svg>
@@ -140,9 +140,9 @@ export default function AnalyticsDashboard({ matters, documents, tasks }: Analyt
             {/* Visual Custom Donut representation */}
             <div className="relative h-28 w-28 flex items-center justify-center">
               <svg viewBox="0 0 36 36" className="h-full w-full transform -rotate-90">
-                <circle cx="18" cy="18" r="15.915" fill="none" stroke="#FAF9F6" strokeWidth="3" />
-                <circle cx="18" cy="18" r="15.915" fill="none" stroke="#0B192C" strokeWidth="3" strokeDasharray="60 40" strokeDashoffset="0" />
-                <circle cx="18" cy="18" r="15.915" fill="none" stroke="#C5A880" strokeWidth="3" strokeDasharray="25 75" strokeDashoffset="60" />
+                <circle cx="18" cy="18" r="15.915" fill="none" stroke="#FAFBF7" strokeWidth="3" />
+                <circle cx="18" cy="18" r="15.915" fill="none" stroke="#112815" strokeWidth="3" strokeDasharray="60 40" strokeDashoffset="0" />
+                <circle cx="18" cy="18" r="15.915" fill="none" stroke="#76935C" strokeWidth="3" strokeDasharray="25 75" strokeDashoffset="60" />
               </svg>
               <div className="absolute text-center leading-none">
                 <span className="text-xl font-serif font-bold text-brand-navy">16</span>

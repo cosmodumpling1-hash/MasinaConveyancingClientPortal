@@ -1,6 +1,7 @@
 import React from 'react';
 import { Shield, Users, Landmark, Scale, LogOut, ChevronDown } from 'lucide-react';
 import { User } from '../types';
+import MasinaLogo from './MasinaLogo';
 
 interface NavbarProps {
   currentUser: User;
@@ -36,14 +37,8 @@ export default function Navbar({ currentUser, allUsers, onSwitchUser, onLogout }
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           {/* Logo Brand section */}
-          <div className="flex items-center space-x-3">
-            <div className="bg-brand-navy p-2.5 rounded-lg text-white flex items-center justify-center shadow-md shadow-brand-navy/10 border border-brand-gold/20">
-              <Scale className="h-5 w-5 text-brand-gold" />
-            </div>
-            <div>
-              <span className="font-serif font-bold text-brand-navy text-xl tracking-wider block leading-tight">PENDELTON</span>
-              <span className="text-[10px] font-bold block text-brand-gold tracking-widest uppercase leading-none mt-0.5">Deeds & Conveyancing</span>
-            </div>
+          <div className="flex items-center">
+            <MasinaLogo size="md" />
           </div>
 
           {/* Center Sandbox Information */}
@@ -113,6 +108,13 @@ export default function Navbar({ currentUser, allUsers, onSwitchUser, onLogout }
                   {currentUser.role}
                 </span>
               </div>
+              <button
+                onClick={onLogout}
+                className="p-1.5 ml-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50/50 transition-colors cursor-pointer"
+                title="Sign Out Session"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
             </div>
           </div>
         </div>
