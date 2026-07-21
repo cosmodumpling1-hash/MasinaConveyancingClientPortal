@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, Users, Mail, Bell, FileText, CheckCircle2, Terminal, Sparkles, RefreshCw, Copy, Check, Power } from 'lucide-react';
+import { Shield, Users, Mail, Bell, FileText, CheckCircle2, Terminal, Sparkles, RefreshCw, Copy, Check, Power, Database, ExternalLink } from 'lucide-react';
 import { User, AuditLog, AutomationRule, AutomationLog } from '../types';
 
 interface AdminPanelProps {
@@ -21,7 +21,79 @@ export default function AdminPanel({
   onAddUser,
   onToggleRule
 }: AdminPanelProps) {
-  const [activeTab, setActiveTab] = React.useState<'audit' | 'automation' | 'templates' | 'users'>('audit');
+  const [activeTab, setActiveTab] = React.useState<'audit' | 'automation' | 'templates' | 'users' | 'supabase'>('audit');
+  
+  // Supabase state
+  const [supabaseConfig, setSupabaseConfig] = React.useState<{ url: string; projectId: string; hasKey: boolean } | null>(null);
+  const [supabaseStatus, setSupabaseStatus] = React.useState<{ configured: boolean; connected: boolean; isTableMissing?: boolean; error?: string; message: string } | null>(null);
+  const [supabaseSql, setSupabaseSql] = React.useState<string>('');
+  const [syncing, setSyncing] = React.useState(false);
+  const [syncResult, setSyncResult] = React.useState<{ success: boolean; message: string; report?: any } | null>(null);
+  const [copiedSql, setCopiedSql] = React.useState(false);
+  const [loadingConfig, setLoadingConfig] = React.useState(false);
+
+  const fetchSupabaseInfo = async () => {
+    setLoadingConfig(true);
+    try {
+      const configRes = await fetch('/api/supabase/config');
+      if (configRes.ok) {
+        const configData = await configRes.json();
+        setSupabaseConfig(configData);
+      }
+
+      const statusRes = await fetch('/api/supabase/status');
+      if (statusRes.ok) {
+        const statusData = await statusRes.json();
+        setSupabaseStatus(statusData);
+      }
+
+      const sqlRes = await fetch('/api/supabase/sql-schema');
+      if (sqlRes.ok) {
+        const sqlData = await sqlRes.json();
+        setSupabaseSql(sqlData.sql);
+      }
+    } catch (err) {
+      console.error("Error fetching Supabase configuration:", err);
+    } finally {
+      setLoadingConfig(false);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchSupabaseInfo();
+  }, []);
+
+  const handleSyncSupabase = async () => {
+    setSyncing(true);
+    setSyncResult(null);
+    try {
+      const res = await fetch('/api/supabase/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await res.json();
+      setSyncResult(data);
+      // Refresh status after trying to sync
+      const statusRes = await fetch('/api/supabase/status');
+      if (statusRes.ok) {
+        const statusData = await statusRes.json();
+        setSupabaseStatus(statusData);
+      }
+    } catch (err: any) {
+      setSyncResult({
+        success: false,
+        message: `Synchronization failed: ${err.message || err}`
+      });
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const copySqlToClipboard = () => {
+    navigator.clipboard.writeText(supabaseSql);
+    setCopiedSql(true);
+    setTimeout(() => setCopiedSql(false), 2000);
+  };
   
   // Template Generator state
   const [templateType, setTemplateType] = React.useState('power_of_attorney');
@@ -135,6 +207,18 @@ export default function AdminPanel({
           >
             <Users className="h-3.5 w-3.5 mr-1 text-brand-gold" />
             User Access Management
+          </button>
+
+          <button
+            onClick={() => { setActiveTab('supabase'); fetchSupabaseInfo(); }}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all flex items-center ${
+              activeTab === 'supabase'
+                ? 'bg-brand-navy text-white shadow-sm ring-1 ring-brand-gold/25'
+                : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200/60'
+            }`}
+          >
+            <Database className="h-3.5 w-3.5 mr-1 text-brand-gold" />
+            Supabase Integration
           </button>
         </div>
 
@@ -456,6 +540,244 @@ export default function AdminPanel({
               </div>
 
             </div>
+          </div>
+        )}
+
+        {/* TAB 5: SUPABASE DATABASE SYNCHRONIZER */}
+        {activeTab === 'supabase' && (
+          <div className="space-y-6 animate-fade-in">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-150 pb-4">
+              <div>
+                <h3 className="text-sm font-serif font-bold text-brand-navy uppercase tracking-wider flex items-center space-x-1.5">
+                  <Database className="h-4.5 w-4.5 text-brand-gold-dark animate-pulse" />
+                  <span>Supabase Real-Time Sync Hub</span>
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  Connect and synchronize Pendelton Law database structures with your cloud-hosted Supabase PostgreSQL instance.
+                </p>
+              </div>
+              <button
+                onClick={fetchSupabaseInfo}
+                disabled={loadingConfig}
+                className="self-start md:self-auto px-3 py-1.5 border border-slate-200 hover:bg-slate-50 disabled:bg-slate-100 text-slate-600 font-bold text-xs rounded-lg transition-colors flex items-center space-x-1 cursor-pointer"
+              >
+                <RefreshCw className={`h-3 w-3 ${loadingConfig ? 'animate-spin' : ''}`} />
+                <span>Check Connection</span>
+              </button>
+            </div>
+
+            {loadingConfig ? (
+              <div className="flex flex-col items-center justify-center py-12 space-y-3">
+                <RefreshCw className="h-8 w-8 animate-spin text-brand-gold" />
+                <p className="text-xs text-slate-500 font-medium">Analyzing Supabase Project Status...</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* Configuration Stats Panel */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                  {/* Status Indicator Card */}
+                  <div className="border border-slate-200/60 rounded-xl p-5 bg-white shadow-sm flex flex-col justify-between">
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono">CONNECTION STATUS</span>
+                      {supabaseStatus?.connected ? (
+                        <div className="mt-3 flex items-start space-x-2.5">
+                          <span className="h-3 w-3 rounded-full bg-emerald-500 animate-ping mt-1" />
+                          <div>
+                            <h4 className="text-sm font-bold text-emerald-800">CONNECTED</h4>
+                            <p className="text-[11px] text-slate-500 mt-0.5">Online communication established</p>
+                          </div>
+                        </div>
+                      ) : supabaseStatus?.isTableMissing ? (
+                        <div className="mt-3 flex items-start space-x-2.5">
+                          <span className="h-3 w-3 rounded-full bg-amber-500 mt-1" />
+                          <div>
+                            <h4 className="text-sm font-bold text-amber-800">TABLES MISSING</h4>
+                            <p className="text-[11px] text-slate-500 mt-0.5">Connected, but database schema not loaded</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="mt-3 flex items-start space-x-2.5">
+                          <span className="h-3 w-3 rounded-full bg-slate-300 mt-1" />
+                          <div>
+                            <h4 className="text-sm font-bold text-slate-700">NOT CONFIGURED</h4>
+                            <p className="text-[11px] text-slate-500 mt-0.5">No API secret configured yet</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="mt-4 border-t border-slate-100 pt-3 flex items-center justify-between text-[11px] text-slate-500 font-mono">
+                      <span>API Secret Check:</span>
+                      <span className={`font-bold ${supabaseConfig?.hasKey ? 'text-emerald-600' : 'text-slate-400'}`}>
+                        {supabaseConfig?.hasKey ? '✓ SECURED' : '⚠ MISSING'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Supabase Endpoint Info Card */}
+                  <div className="border border-slate-200/60 rounded-xl p-5 bg-white shadow-sm flex flex-col justify-between">
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono">SUPABASE CREDENTIALS</span>
+                      <div className="mt-3 space-y-2">
+                        <div>
+                          <label className="text-[9px] font-bold uppercase text-slate-400 font-mono block">PROJECT ID</label>
+                          <span className="text-xs font-mono font-bold text-brand-navy bg-brand-cream/35 px-1.5 py-0.5 rounded border border-brand-gold/15 block w-fit">
+                            {supabaseConfig?.projectId || 'lxdescdgxgzxfahhbqfy'}
+                          </span>
+                        </div>
+                        <div>
+                          <label className="text-[9px] font-bold uppercase text-slate-400 font-mono block">ENDPOINT URL</label>
+                          <span className="text-[10px] font-mono text-slate-600 truncate block">
+                            {supabaseConfig?.url || 'https://lxdescdgxgzxfahhbqfy.supabase.co'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <a
+                      href={`https://supabase.com/dashboard/project/${supabaseConfig?.projectId || 'lxdescdgxgzxfahhbqfy'}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-4 border-t border-slate-100 pt-3 flex items-center justify-between text-[11px] text-brand-gold-dark hover:text-brand-gold font-bold font-sans"
+                    >
+                      <span>Open Supabase Dashboard</span>
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </div>
+
+                  {/* Synchronization Control Card */}
+                  <div className="border border-slate-200/60 rounded-xl p-5 bg-white shadow-sm flex flex-col justify-between">
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono">DATA SYNCHRONIZER</span>
+                      <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
+                        Export existing conveyancing matters, documents, rules, and security audits from Pendelton local JSON directly into Supabase tables.
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={handleSyncSupabase}
+                      disabled={syncing || !supabaseConfig?.hasKey}
+                      className="mt-4 w-full bg-brand-navy hover:bg-brand-navy/95 disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-100 text-white font-bold text-xs py-2 rounded-lg border border-slate-800 shadow-sm transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
+                    >
+                      {syncing ? (
+                        <>
+                          <RefreshCw className="h-3.5 w-3.5 animate-spin text-brand-gold" />
+                          <span>Syncing Pipelines...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Database className="h-3.5 w-3.5 text-brand-gold" />
+                          <span>Sync Local Data Now</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* If API Key is missing, guide them with step-by-step instructions on how to add it */}
+                {!supabaseConfig?.hasKey && (
+                  <div className="bg-amber-50/55 border border-amber-200/60 rounded-xl p-5 space-y-3">
+                    <h4 className="text-xs font-bold text-amber-900 uppercase tracking-wider font-sans flex items-center space-x-1.5">
+                      <span>⚠ API SECRET NOT SET (REQUIRED STEP)</span>
+                    </h4>
+                    <p className="text-xs text-amber-800 leading-relaxed max-w-3xl">
+                      We have integrated your Supabase client targeting URL <strong className="font-mono text-[11px]">https://lxdescdgxgzxfahhbqfy.supabase.co</strong>. However, to authorize writes, you must add the <strong className="font-sans text-brand-navy text-[11px]">SUPABASE_ANON_KEY</strong> secret to your environment.
+                    </p>
+                    <div className="text-xs text-amber-950 font-serif">
+                      <strong className="block font-sans text-[11px] text-slate-800 font-bold mb-1 uppercase tracking-widest">How to configure the API key:</strong>
+                      <ol className="list-decimal list-inside space-y-1 font-sans text-[11px] text-slate-600">
+                        <li>Open the App settings menu in the top-right corner of Google AI Studio.</li>
+                        <li>Click on the <strong className="font-bold text-brand-navy">Secrets / Environment variables</strong> section.</li>
+                        <li>Add a new secret variable named <strong className="font-mono bg-slate-100 text-brand-navy px-1 py-0.5 rounded">SUPABASE_ANON_KEY</strong>.</li>
+                        <li>Paste your Supabase Anonymous Key (available in your Supabase dashboard under API settings) into the value field.</li>
+                        <li>Restart the applet to reload environment configs!</li>
+                      </ol>
+                    </div>
+                  </div>
+                )}
+
+                {/* Synchronization Success/Failure Reporting */}
+                {syncResult && (
+                  <div className={`rounded-xl p-5 border space-y-3.5 ${
+                    syncResult.success 
+                      ? 'bg-emerald-50/40 border-emerald-200' 
+                      : 'bg-red-50/40 border-red-200'
+                  }`}>
+                    <div className="flex justify-between items-center">
+                      <h4 className={`text-xs font-bold uppercase tracking-wider font-sans ${
+                        syncResult.success ? 'text-emerald-800' : 'text-red-800'
+                      }`}>
+                        {syncResult.success ? '✓ Synchronization Succeeded' : '⚠ Sync Completed with Failures'}
+                      </h4>
+                      <span className="text-[10px] font-mono text-slate-400">Pipeline Report</span>
+                    </div>
+                    <p className={`text-xs ${syncResult.success ? 'text-emerald-700' : 'text-red-700'}`}>
+                      {syncResult.message}
+                    </p>
+
+                    {syncResult.report && (
+                      <div className="overflow-x-auto border border-slate-150 rounded-lg bg-white shadow-sm">
+                        <table className="w-full text-[11px] text-left border-collapse font-sans">
+                          <thead>
+                            <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase font-mono text-[9px]">
+                              <th className="p-2.5">Table Name</th>
+                              <th className="p-2.5">Local Records</th>
+                              <th className="p-2.5">Successfully Synced</th>
+                              <th className="p-2.5">Status / Errors</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 text-slate-600">
+                            {Object.entries(syncResult.report).map(([tbl, info]: [string, any]) => (
+                              <tr key={tbl} className="hover:bg-slate-50/50">
+                                <td className="p-2.5 font-bold font-mono text-brand-navy">{tbl}</td>
+                                <td className="p-2.5 font-mono">{info.total}</td>
+                                <td className="p-2.5 font-mono text-emerald-600 font-bold">{info.synced}</td>
+                                <td className="p-2.5">
+                                  {info.error ? (
+                                    <span className="text-red-600 font-mono text-[10px] bg-red-50/80 px-2 py-0.5 rounded block max-w-sm truncate" title={info.error}>
+                                      Error: {info.error}
+                                    </span>
+                                  ) : (
+                                    <span className="text-emerald-700 font-mono text-[10px] bg-emerald-50 px-2 py-0.5 rounded font-bold">
+                                      SUCCESS
+                                    </span>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* SQL Editor DDL schema area */}
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider font-sans">
+                        Supabase SQL DDL Schema Script
+                      </h4>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        Run this script in your Supabase SQL Editor to instantly provision all required tables before syncing.
+                      </p>
+                    </div>
+                    <button
+                      onClick={copySqlToClipboard}
+                      className="text-xs text-brand-gold-dark hover:text-brand-gold font-bold flex items-center space-x-1 border border-slate-250 bg-slate-50 hover:bg-slate-100 px-3 py-1 rounded cursor-pointer"
+                    >
+                      {copiedSql ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+                      <span>{copiedSql ? 'Copied' : 'Copy SQL Schema'}</span>
+                    </button>
+                  </div>
+
+                  <div className="bg-[#0B192C] text-slate-300 rounded-xl p-4 font-mono text-[10px] h-72 overflow-y-auto border border-slate-800 space-y-1.5 shadow-inner leading-relaxed font-mono">
+                    <pre className="whitespace-pre-wrap">{supabaseSql}</pre>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

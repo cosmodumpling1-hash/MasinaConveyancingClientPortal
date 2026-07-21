@@ -4,6 +4,7 @@ import fs from 'fs';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 import dotenv from 'dotenv';
+import { createClient } from '@supabase/supabase-js';
 
 dotenv.config();
 
@@ -29,6 +30,23 @@ function getGeminiClient(): GoogleGenAI | null {
     }
   }
   return aiClient;
+}
+
+// Lazy initialize Supabase client
+let supabaseClient: any = null;
+function getSupabaseClient() {
+  if (!supabaseClient) {
+    const supabaseUrl = process.env.SUPABASE_URL || 'https://lxdescdgxgzxfahhbqfy.supabase.co';
+    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    if (supabaseKey && supabaseKey !== '' && supabaseKey !== 'undefined') {
+      try {
+        supabaseClient = createClient(supabaseUrl, supabaseKey);
+      } catch (err) {
+        console.error("Failed to initialize Supabase client:", err);
+      }
+    }
+  }
+  return supabaseClient;
 }
 
 // Simple file-based database for persistence
@@ -1134,6 +1152,272 @@ AS WITNESSES:
   } catch (error: any) {
     console.error("Gemini Template Draft error:", error);
     res.status(500).json({ error: 'Failed to draft AI template.' });
+  }
+});
+
+// Supabase Integration Routes
+app.get('/api/supabase/config', (req, res) => {
+  const supabaseUrl = process.env.SUPABASE_URL || 'https://lxdescdgxgzxfahhbqfy.supabase.co';
+  const hasKey = !!process.env.SUPABASE_ANON_KEY && process.env.SUPABASE_ANON_KEY !== '';
+  
+  // Extract project ID from URL if possible
+  let projectId = 'lxdescdgxgzxfahhbqfy';
+  try {
+    const urlObj = new URL(supabaseUrl);
+    const hostParts = urlObj.hostname.split('.');
+    if (hostParts.length > 0) {
+      projectId = hostParts[0];
+    }
+  } catch (e) {}
+
+  res.json({
+    url: supabaseUrl,
+    projectId,
+    hasKey
+  });
+});
+
+app.get('/api/supabase/status', async (req, res) => {
+  const supabase = getSupabaseClient();
+  if (!supabase) {
+    return res.json({
+      configured: false,
+      connected: false,
+      message: 'Supabase credentials missing. Add SUPABASE_ANON_KEY in Settings/secrets to connect.'
+    });
+  }
+
+  try {
+    // Try to run a lightweight select on the 'users' table
+    const { data, error } = await supabase
+      .from('users')
+      .select('id')
+      .limit(1);
+
+    if (error) {
+      // Check if it is a missing relation error (relation "users" does not exist)
+      const isTableMissing = error.message && (error.message.includes('relation') || error.message.includes('does not exist'));
+      return res.json({
+        configured: true,
+        connected: false,
+        isTableMissing,
+        error: error.message,
+        code: error.code,
+        message: isTableMissing 
+          ? 'Connected to Supabase, but required tables are missing. Please initialize tables using the SQL editor DDL schema below.'
+          : `Supabase query failed: ${error.message}`
+      });
+    }
+
+    res.json({
+      configured: true,
+      connected: true,
+      message: 'Successfully connected and authenticated with Supabase!'
+    });
+  } catch (err: any) {
+    res.json({
+      configured: true,
+      connected: false,
+      message: `Failed to connect to Supabase: ${err.message || err}`
+    });
+  }
+});
+
+app.get('/api/supabase/sql-schema', (req, res) => {
+  const schema = `-- SQL DDL script for Pendelton Conveyancing Matter management
+-- Paste this in your Supabase SQL Editor to set up the necessary tables!
+
+CREATE TABLE IF NOT EXISTS users (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  email TEXT,
+  role TEXT,
+  phone TEXT,
+  "kycStatus" TEXT,
+  "idNumber" TEXT,
+  address TEXT,
+  "consentAccepted" BOOLEAN,
+  "consentDate" TEXT,
+  "avatarUrl" TEXT
+);
+
+CREATE TABLE IF NOT EXISTS matters (
+  id TEXT PRIMARY KEY,
+  "matterNumber" TEXT,
+  "propertyAddress" TEXT,
+  "propertyPrice" NUMERIC,
+  "buyerId" TEXT,
+  "buyerName" TEXT,
+  "sellerId" TEXT,
+  "sellerName" TEXT,
+  "assignedAttorneyId" TEXT,
+  "assignedAttorneyName" TEXT,
+  "assignedParalegalId" TEXT,
+  "assignedParalegalName" TEXT,
+  "currentStage" INTEGER,
+  "expectedCompletionDate" TEXT,
+  status TEXT
+);
+
+CREATE TABLE IF NOT EXISTS documents (
+  id TEXT PRIMARY KEY,
+  "matterId" TEXT,
+  name TEXT NOT NULL,
+  category TEXT,
+  "fileUrl" TEXT,
+  "uploadDate" TEXT,
+  status TEXT,
+  version INTEGER,
+  size TEXT,
+  "uploadedBy" TEXT
+);
+
+CREATE TABLE IF NOT EXISTS tasks (
+  id TEXT PRIMARY KEY,
+  "matterId" TEXT,
+  "matterNumber" TEXT,
+  "propertyAddress" TEXT,
+  title TEXT NOT NULL,
+  description TEXT,
+  "assignedToId" TEXT,
+  "assignedToName" TEXT,
+  "assignedToRole" TEXT,
+  "dueDate" TEXT,
+  status TEXT,
+  "requiresDocumentCategory" TEXT
+);
+
+CREATE TABLE IF NOT EXISTS conversations (
+  id TEXT PRIMARY KEY,
+  "matterId" TEXT,
+  "matterNumber" TEXT,
+  "propertyAddress" TEXT,
+  title TEXT,
+  "lastMessageText" TEXT,
+  "lastMessageTimestamp" TEXT
+);
+
+CREATE TABLE IF NOT EXISTS messages (
+  id TEXT PRIMARY KEY,
+  "conversationId" TEXT,
+  "senderId" TEXT,
+  "senderName" TEXT,
+  "senderRole" TEXT,
+  text TEXT,
+  timestamp TEXT,
+  "isRead" BOOLEAN
+);
+
+CREATE TABLE IF NOT EXISTS appointments (
+  id TEXT PRIMARY KEY,
+  "clientId" TEXT,
+  "clientName" TEXT,
+  "staffId" TEXT,
+  "staffName" TEXT,
+  "staffRole" TEXT,
+  date TEXT,
+  time TEXT,
+  duration INTEGER,
+  type TEXT,
+  status TEXT,
+  "videoLink" TEXT,
+  description TEXT
+);
+
+CREATE TABLE IF NOT EXISTS "automationRules" (
+  id TEXT PRIMARY KEY,
+  name TEXT,
+  trigger TEXT,
+  "actionType" TEXT,
+  template TEXT,
+  enabled BOOLEAN
+);
+
+CREATE TABLE IF NOT EXISTS "automationLogs" (
+  id TEXT PRIMARY KEY,
+  timestamp TEXT,
+  "matterId" TEXT,
+  "matterNumber" TEXT,
+  "triggerName" TEXT,
+  recipient TEXT,
+  type TEXT,
+  content TEXT,
+  status TEXT
+);
+
+CREATE TABLE IF NOT EXISTS "auditLogs" (
+  id TEXT PRIMARY KEY,
+  timestamp TEXT,
+  "userId" TEXT,
+  "userName" TEXT,
+  "userRole" TEXT,
+  action TEXT,
+  details TEXT,
+  "ipAddress" TEXT
+);`;
+  res.json({ sql: schema });
+});
+
+app.post('/api/supabase/sync', async (req, res) => {
+  const supabase = getSupabaseClient();
+  if (!supabase) {
+    return res.status(400).json({ error: 'Supabase is not configured yet. Add credentials in secrets.' });
+  }
+
+  const db = loadData();
+  const report: Record<string, { total: number; synced: number; error?: string }> = {};
+
+  const tablesMap: Record<string, keyof typeof db> = {
+    'users': 'users',
+    'matters': 'matters',
+    'documents': 'documents',
+    'tasks': 'tasks',
+    'conversations': 'conversations',
+    'messages': 'messages',
+    'appointments': 'appointments',
+    'automationRules': 'automationRules',
+    'automationLogs': 'automationLogs',
+    'auditLogs': 'auditLogs'
+  };
+
+  for (const [tableName, dbKey] of Object.entries(tablesMap)) {
+    const rows = db[dbKey] || [];
+    report[tableName] = { total: rows.length, synced: 0 };
+    
+    if (rows.length === 0) continue;
+
+    try {
+      // Upsert rows into Supabase
+      const { error } = await supabase
+        .from(tableName)
+        .upsert(rows);
+
+      if (error) {
+        report[tableName].error = error.message;
+      } else {
+        report[tableName].synced = rows.length;
+      }
+    } catch (err: any) {
+      report[tableName].error = err.message || err.toString();
+    }
+  }
+
+  const failedTables = Object.entries(report)
+    .filter(([_, info]) => info.error)
+    .map(([name, info]) => `${name} (${info.error})`);
+
+  if (failedTables.length > 0) {
+    res.json({
+      success: false,
+      message: `Synchronized some tables, but failed on: ${failedTables.join(', ')}`,
+      report
+    });
+  } else {
+    res.json({
+      success: true,
+      message: 'All tables successfully synchronized with your Supabase database!',
+      report
+    });
   }
 });
 
