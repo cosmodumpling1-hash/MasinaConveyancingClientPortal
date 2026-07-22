@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, Users, Mail, Bell, FileText, CheckCircle2, Terminal, Sparkles, RefreshCw, Copy, Check, Power, Database, ExternalLink, UserCheck, ShieldAlert, Clock, AlertTriangle } from 'lucide-react';
+import { Shield, Users, Mail, Bell, FileText, CheckCircle2, Terminal, Sparkles, RefreshCw, Copy, Check, Power, Database, ExternalLink, UserCheck, ShieldAlert, Clock, AlertTriangle, Trash2 } from 'lucide-react';
 import { User, AuditLog, AutomationRule, AutomationLog } from '../types';
 
 interface AdminPanelProps {
@@ -128,6 +128,22 @@ export default function AdminPanel({
       });
     } finally {
       setSyncing(false);
+    }
+  };
+
+  const handleClearLocalData = async () => {
+    if (!window.confirm("Are you sure you want to clear all local data and reset to initial baseline?")) return;
+    try {
+      const res = await fetch('/api/admin/clear-local-data', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        alert(data.message || "Local data successfully cleared!");
+        window.location.reload();
+      } else {
+        alert(data.error || "Failed to clear local data.");
+      }
+    } catch (err: any) {
+      alert("Error clearing local data: " + err.message);
     }
   };
 
@@ -822,19 +838,27 @@ export default function AdminPanel({
                     <button
                       onClick={handleSyncSupabase}
                       disabled={syncing || !supabaseConfig?.hasKey}
-                      className="mt-4 w-full bg-brand-navy hover:bg-brand-navy/95 disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-100 text-white font-bold text-xs py-2 rounded-lg border border-slate-800 shadow-sm transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
+                      className="mt-4 w-full bg-brand-navy hover:bg-slate-800 disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-100 text-brand-gold font-bold text-xs py-2.5 rounded-lg border border-slate-800 shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer"
                     >
                       {syncing ? (
                         <>
-                          <RefreshCw className="h-3.5 w-3.5 animate-spin text-brand-gold" />
-                          <span>Syncing Pipelines...</span>
+                          <RefreshCw className="h-4 w-4 animate-spin text-brand-gold" />
+                          <span>Pushing Demo Data to Cloud...</span>
                         </>
                       ) : (
                         <>
-                          <Database className="h-3.5 w-3.5 text-brand-gold" />
-                          <span>Sync Local Data Now</span>
+                          <Database className="h-4 w-4 text-brand-gold" />
+                          <span>Push All Demo Data to Supabase</span>
                         </>
                       )}
+                    </button>
+
+                    <button
+                      onClick={handleClearLocalData}
+                      className="mt-2 w-full bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs py-2 rounded-lg border border-rose-200 transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
+                    >
+                      <Trash2 className="h-3.5 w-3.5 text-rose-600" />
+                      <span>Clear All Local Storage</span>
                     </button>
                   </div>
                 </div>
@@ -858,6 +882,25 @@ export default function AdminPanel({
                         <li>Restart the applet to reload environment configs!</li>
                       </ol>
                     </div>
+                  </div>
+                )}
+
+                {/* RLS Guidance Banner */}
+                {syncResult && syncResult.message && (syncResult.message.includes('row-level security') || syncResult.message.includes('policy')) && (
+                  <div className="bg-amber-50 border-2 border-amber-300 rounded-xl p-4 text-amber-900 space-y-2.5 shadow-md font-sans animate-fade-in">
+                    <div className="flex items-center space-x-2 font-bold text-xs uppercase tracking-wider text-amber-800">
+                      <ShieldAlert className="h-5 w-5 text-amber-600 shrink-0" />
+                      <span>REQUIRED SETUP: Disable Row Level Security (RLS) in Supabase SQL Editor</span>
+                    </div>
+                    <p className="text-xs text-amber-800/90 leading-relaxed">
+                      Supabase currently blocks database writes because <strong>Row Level Security (RLS)</strong> is enabled on your tables without write permissions. To allow your application to store registered users and seed demo data:
+                    </p>
+                    <ol className="list-decimal list-inside space-y-1 text-xs text-amber-900 font-medium bg-white/80 p-3 rounded-lg border border-amber-200/80">
+                      <li>Click <strong>Copy SQL Schema</strong> below.</li>
+                      <li>Open your <a href={`https://supabase.com/dashboard/project/${supabaseConfig?.projectId || 'lxdescdgxgzxfahhbqfy'}/sql/new`} target="_blank" rel="noreferrer" className="underline font-bold text-brand-navy hover:text-brand-gold-dark">Supabase SQL Editor (New Query)</a>.</li>
+                      <li>Paste the SQL script and click <strong>Run</strong>.</li>
+                      <li>Click <strong>Push All Demo Data to Supabase</strong> above!</li>
+                    </ol>
                   </div>
                 )}
 

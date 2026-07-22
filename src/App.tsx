@@ -43,12 +43,14 @@ export default function App() {
   // Load and refresh state from Full-stack API
   const refreshAllContexts = async (userIdToAuth?: string) => {
     try {
-      // 1. Fetch Users List
-      // To get the starter users list, we can load matters or construct local users as we initialize, 
-      // but let's query our login/auth configurations. Since we don't have a separate /users endpoint, 
-      // we can do a mock loading or fetch. Wait, our server has initial users!
-      // Let's create an authentication simulation that fetches matters, tasks, appointments and logs first.
-      
+      // 1. Fetch Users List from Live Supabase / Database API
+      const usersRes = await fetch('/api/users');
+      let liveUsers: User[] = [];
+      if (usersRes.ok) {
+        liveUsers = await usersRes.json();
+        setAllUsers(liveUsers);
+      }
+
       const mattersRes = await fetch('/api/matters');
       const mattersData = await mattersRes.json();
       setMatters(mattersData);
@@ -90,26 +92,20 @@ export default function App() {
       const auditData = await auditRes.json();
       setAuditLogs(auditData);
 
-      // Initialize the default user profile context on startup
-      const targetUserId = userIdToAuth || 'usr-client-1'; // Default: John Buyer
+      // Initialize the active user profile context on startup
+      const targetUserId = userIdToAuth || currentUser?.id || (liveUsers[0]?.id || 'usr-admin-1');
       const loginRes = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: targetUserId })
       });
-      const loginData = await loginRes.json();
-      setCurrentUser(loginData.user);
-
-      // Re-populate all available mock-auth accounts
-      // Arthur, John, Sarah, Clara, Pamela, Alice
-      setAllUsers([
-        { id: 'usr-client-1', name: 'John Buyer', email: 'john.buyer@gmail.com', role: 'buyer', kycStatus: 'pending', idNumber: '8907125012083', address: '14 Blue Crane Estate, Midrand', consentAccepted: true },
-        { id: 'usr-client-2', name: 'Sarah Seller', email: 'sarah.seller@yahoo.com', role: 'seller', kycStatus: 'verified', idNumber: '7504020084089', address: '124 Villa Rosa, Sandton', consentAccepted: true },
-        { id: 'usr-attorney-1', name: 'Arthur Masina', email: 'arthur@masinalaw.co.za', role: 'attorney', kycStatus: 'verified', consentAccepted: true },
-        { id: 'usr-convey-1', name: 'Clara Convey', email: 'clara@masinalaw.co.za', role: 'conveyancer', kycStatus: 'verified', consentAccepted: true },
-        { id: 'usr-paralegal-1', name: 'Pamela Paralegal', email: 'pamela@masinalaw.co.za', role: 'paralegal', kycStatus: 'verified', consentAccepted: true },
-        { id: 'usr-admin-1', name: 'Admin Alice', email: 'alice@masinalaw.co.za', role: 'admin', kycStatus: 'verified', consentAccepted: true }
-      ]);
+      if (loginRes.ok) {
+        const loginData = await loginRes.json();
+        setCurrentUser(loginData.user);
+      } else if (liveUsers.length > 0) {
+        const found = liveUsers.find(u => u.id === targetUserId) || liveUsers[0];
+        setCurrentUser(found);
+      }
 
       // Pull message thread for current active conversation
       const msgRes = await fetch('/api/conversations/conv-1/messages');
@@ -307,7 +303,14 @@ export default function App() {
 
   const handleAllocateRole = async (userId: string, newRole: string) => {
     try {
-      await refreshAllContexts(currentUser?.id);
+      const res = await fetch(`/api/users/${userId}/role`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: newRole, adminUserId: currentUser?.id })
+      });
+      if (res.ok) {
+        await refreshAllContexts(currentUser?.id);
+      }
     } catch (err) {
       console.error(err);
     }

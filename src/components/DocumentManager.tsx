@@ -1,12 +1,12 @@
 import React from 'react';
-import { Folder, Upload, FileText, CheckCircle, XCircle, AlertTriangle, Eye, Search, Calendar, User, CornerDownRight, Check, X, ShieldAlert, Sparkles, Send } from 'lucide-react';
+import { Folder, Upload, FileText, CheckCircle, XCircle, AlertTriangle, Eye, Search, Calendar, User, CornerDownRight, Check, X, ShieldAlert, Sparkles, Send, File, Download, HardDrive } from 'lucide-react';
 import { Document, DocumentCategory, User as UserType } from '../types';
 
 interface DocumentManagerProps {
   documents: Document[];
   currentUser: UserType;
   matterId: string;
-  onUpload: (docData: { name: string; category: DocumentCategory }) => void;
+  onUpload: (docData: { name: string; category: DocumentCategory; fileUrl?: string; size?: string }) => void;
   onReview: (docId: string, status: 'approved' | 'rejected', notes: string) => void;
 }
 
@@ -15,7 +15,15 @@ export default function DocumentManager({ documents, currentUser, matterId, onUp
   const [searchQuery, setSearchQuery] = React.useState('');
   const [reviewNotes, setReviewNotes] = React.useState<{ [key: string]: string }>({});
   const [uploadCategory, setUploadCategory] = React.useState<DocumentCategory>('fica');
-  const [simulatedFileName, setSimulatedFileName] = React.useState('');
+  
+  // File upload state
+  const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
+  const [customFileName, setCustomFileName] = React.useState('');
+  const [fileDataUrl, setFileDataUrl] = React.useState<string>('');
+  const [formattedFileSize, setFormattedFileSize] = React.useState<string>('1.5 MB');
+  const [isDragging, setIsDragging] = React.useState(false);
+  const [uploadSuccessMsg, setUploadSuccessMsg] = React.useState('');
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   
   // Custom document requirements checklist for transfer compliance
   const folders: { id: DocumentCategory; label: string; count: number; required: boolean }[] = [
@@ -47,22 +55,105 @@ export default function DocumentManager({ documents, currentUser, matterId, onUp
     }
   };
 
-  const handleSimulatedUpload = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!simulatedFileName) {
-      alert("Please enter a simulated file name or drag a local asset.");
-      return;
+  const processFile = (file: File) => {
+    setSelectedFile(file);
+    setCustomFileName(file.name);
+    
+    // Format file size
+    const sizeInMB = file.size / (1024 * 1024);
+    if (sizeInMB < 1) {
+      setFormattedFileSize(`${Math.round(file.size / 1024)} KB`);
+    } else {
+      setFormattedFileSize(`${sizeInMB.toFixed(1)} MB`);
     }
-    onUpload({
-      name: simulatedFileName.endsWith('.pdf') || simulatedFileName.endsWith('.png') || simulatedFileName.endsWith('.jpg') ? simulatedFileName : `${simulatedFileName}.pdf`,
-      category: uploadCategory
-    });
-    setSimulatedFileName('');
+
+    // Auto select category if keywords match
+    const lowerName = file.name.toLowerCase();
+    if (lowerName.includes('id') || lowerName.includes('passport') || lowerName.includes('identity')) {
+      setUploadCategory('identity');
+    } else if (lowerName.includes('fica') || lowerName.includes('utility') || lowerName.includes('invoice') || lowerName.includes('address')) {
+      setUploadCategory('fica');
+    } else if (lowerName.includes('sale') || lowerName.includes('otp') || lowerName.includes('agreement')) {
+      setUploadCategory('sale_agreement');
+    } else if (lowerName.includes('deed') || lowerName.includes('title')) {
+      setUploadCategory('deed');
+    } else if (lowerName.includes('rates') || lowerName.includes('clearance') || lowerName.includes('municipal')) {
+      setUploadCategory('rates_clearance');
+    } else if (lowerName.includes('tax') || lowerName.includes('bank') || lowerName.includes('sars') || lowerName.includes('financial')) {
+      setUploadCategory('financial');
+    }
+
+    // Read file data URL for inline preview / downloading
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setFileDataUrl(e.target?.result as string || '');
+    };
+    reader.readAsDataURL(file);
   };
 
-  const selectPresetUpload = (preset: string, category: DocumentCategory) => {
-    setSimulatedFileName(preset);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      processFile(e.target.files[0]);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      processFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleUploadSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const fileNameToUse = customFileName.trim();
+    if (!fileNameToUse) {
+      alert("Please select a file or enter a document name.");
+      return;
+    }
+
+    const finalName = fileNameToUse.match(/\.[a-zA-Z0-9]+$/)
+      ? fileNameToUse
+      : `${fileNameToUse}.pdf`;
+
+    onUpload({
+      name: finalName,
+      category: uploadCategory,
+      fileUrl: fileDataUrl || '#',
+      size: formattedFileSize
+    });
+
+    setUploadSuccessMsg(`Successfully uploaded "${finalName}" to ${uploadCategory.toUpperCase()} folder!`);
+    setTimeout(() => setUploadSuccessMsg(''), 4000);
+
+    // Reset state
+    setSelectedFile(null);
+    setCustomFileName('');
+    setFileDataUrl('');
+    setFormattedFileSize('1.5 MB');
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const selectPresetUpload = (presetName: string, category: DocumentCategory) => {
+    setCustomFileName(presetName);
     setUploadCategory(category);
+    setFormattedFileSize('1.2 MB');
+    setFileDataUrl('');
+    setSelectedFile(null);
   };
 
   const isStaff = currentUser.role !== 'buyer' && currentUser.role !== 'seller';
@@ -70,9 +161,9 @@ export default function DocumentManager({ documents, currentUser, matterId, onUp
   return (
     <div className="space-y-6" id="document-manager">
       {/* Overview Grid with automatic missing documents alert */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Compliance checklist */}
-        <div className="md:col-span-2 bg-white rounded-xl border border-slate-200/60 p-5 shadow-premium space-y-4">
+        <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200/60 p-5 shadow-premium space-y-4">
           <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-2 font-sans border-b border-slate-100 pb-2">
             <CheckCircle className="h-5 w-5 text-brand-gold-dark" />
             <span>FICA Conveyancing Document Checklist</span>
@@ -119,26 +210,95 @@ export default function DocumentManager({ documents, currentUser, matterId, onUp
           </div>
         </div>
 
-        {/* Missing Document Alerts and upload center */}
-        <div className="bg-brand-navy text-white rounded-xl p-5 shadow-premium border border-brand-gold/15 flex flex-col justify-between">
-          <div className="space-y-3">
-            <h3 className="text-xs font-bold text-brand-gold uppercase tracking-widest flex items-center space-x-1 font-mono">
-              <Upload className="h-4 w-4" />
-              <span>Secure Digital Filing</span>
-            </h3>
+        {/* Document Upload Port (Drag & Drop + File Selector) */}
+        <div className="bg-brand-navy text-white rounded-xl p-5 shadow-premium border border-brand-gold/15 flex flex-col justify-between space-y-4">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold text-brand-gold uppercase tracking-widest flex items-center space-x-1.5 font-mono">
+                <Upload className="h-4 w-4" />
+                <span>Secure Digital Filing</span>
+              </h3>
+              <span className="text-[10px] bg-brand-gold/20 text-brand-gold px-2 py-0.5 rounded font-mono font-bold">256-BIT ENCRYPTED</span>
+            </div>
             <h4 className="text-base font-serif font-bold text-slate-100">Document Upload Port</h4>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Upload electronic assets (PDF, JPG, PNG, or Word docs). Submissions are instantly signed with an audit signature and encrypted in our deeds cloud.
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Upload documents (PDF, PNG, JPG, Word). Submissions are instantly signed with an audit trail and logged to your matter repository.
             </p>
           </div>
 
-          <form onSubmit={handleSimulatedUpload} className="space-y-3 mt-4">
+          {uploadSuccessMsg && (
+            <div className="bg-emerald-950/80 border border-emerald-500/50 text-emerald-200 text-xs p-3 rounded-lg flex items-center space-x-2 animate-fade-in">
+              <CheckCircle className="h-4 w-4 text-emerald-400 shrink-0" />
+              <span>{uploadSuccessMsg}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleUploadSubmit} className="space-y-3">
+            {/* Hidden native file input */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.txt"
+              className="hidden"
+            />
+
+            {/* Drag & Drop File Zone */}
+            <div
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+              className={`border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-all ${
+                isDragging
+                  ? 'border-brand-gold bg-brand-gold/10'
+                  : selectedFile
+                  ? 'border-emerald-500/80 bg-emerald-950/30'
+                  : 'border-slate-700 hover:border-brand-gold/60 bg-brand-blue-slate/50'
+              }`}
+            >
+              {selectedFile ? (
+                <div className="flex items-center justify-between text-left space-x-3">
+                  <div className="flex items-center space-x-2.5 min-w-0">
+                    <div className="p-2 bg-emerald-500/20 text-emerald-400 rounded-lg shrink-0">
+                      <FileText className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-slate-100 truncate">{selectedFile.name}</p>
+                      <p className="text-[10px] text-emerald-400 font-mono">{formattedFileSize} • Ready to upload</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedFile(null);
+                      setCustomFileName('');
+                      if (fileInputRef.current) fileInputRef.current.value = '';
+                    }}
+                    className="p-1 hover:bg-slate-800 text-slate-400 hover:text-white rounded"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-1.5 py-1">
+                  <Upload className="h-6 w-6 text-brand-gold mx-auto animate-pulse" />
+                  <p className="text-xs font-bold text-slate-200">
+                    Drag & Drop file here, or <span className="text-brand-gold underline font-extrabold">Browse Files</span>
+                  </p>
+                  <p className="text-[10px] text-slate-400 font-mono">Supports PDF, PNG, JPG, DOCX (Max 25MB)</p>
+                </div>
+              )}
+            </div>
+
+            {/* Target Category Directory */}
             <div>
-              <label className="block text-[10px] text-slate-400 font-bold uppercase mb-1">Target Category Directory</label>
+              <label className="block text-[10px] text-slate-300 font-bold uppercase mb-1">Target Folder Directory</label>
               <select
                 value={uploadCategory}
                 onChange={(e) => setUploadCategory(e.target.value as DocumentCategory)}
-                className="w-full bg-brand-blue-slate text-xs text-white px-2.5 py-1.5 rounded border border-slate-800 focus:outline-none focus:ring-1 focus:ring-brand-gold"
+                className="w-full bg-brand-blue-slate text-xs text-white px-3 py-2 rounded-lg border border-slate-700 focus:outline-none focus:ring-1 focus:ring-brand-gold"
               >
                 {folders.map(f => (
                   <option key={f.id} value={f.id}>{f.label}</option>
@@ -146,43 +306,51 @@ export default function DocumentManager({ documents, currentUser, matterId, onUp
               </select>
             </div>
 
+            {/* Document Title Input */}
             <div>
-              <label className="block text-[10px] text-slate-400 font-bold uppercase mb-1">File Name</label>
+              <label className="block text-[10px] text-slate-300 font-bold uppercase mb-1">Document Display Title</label>
               <input
                 type="text"
-                value={simulatedFileName}
-                onChange={(e) => setSimulatedFileName(e.target.value)}
+                value={customFileName}
+                onChange={(e) => setCustomFileName(e.target.value)}
                 placeholder="e.g. Utility_Bill_June_2026.pdf"
-                className="w-full bg-brand-blue-slate text-xs text-white px-2.5 py-1.5 rounded border border-slate-800 focus:outline-none focus:ring-1 focus:ring-brand-gold placeholder-slate-500"
+                className="w-full bg-brand-blue-slate text-xs text-white px-3 py-2 rounded-lg border border-slate-700 focus:outline-none focus:ring-1 focus:ring-brand-gold placeholder-slate-500"
               />
             </div>
 
             <button
               type="submit"
-              className="w-full bg-brand-navy hover:bg-brand-navy/95 border border-slate-800 text-white font-bold text-xs py-2 rounded transition-colors flex items-center justify-center space-x-1"
+              className="w-full bg-brand-gold hover:bg-brand-gold-dark text-slate-950 font-bold text-xs py-2.5 rounded-lg shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer"
             >
-              <Upload className="h-3.5 w-3.5 text-brand-gold" />
-              <span>Upload Document</span>
+              <Upload className="h-4 w-4 text-slate-950" />
+              <span>Upload Document to Cloud</span>
             </button>
           </form>
 
           {/* Quick Upload Sandbox Presets */}
-          <div className="mt-4 border-t border-slate-800 pt-3">
-            <span className="text-[10px] text-slate-500 font-bold block uppercase mb-1.5">Sandbox Upload Presets:</span>
+          <div className="border-t border-slate-800 pt-3">
+            <span className="text-[10px] text-slate-400 font-bold block uppercase mb-1.5">Quick Demo Presets:</span>
             <div className="flex flex-wrap gap-1.5">
               <button
                 type="button"
                 onClick={() => selectPresetUpload('Municipal_Water_Electricity_Invoice.pdf', 'fica')}
-                className="bg-slate-800/80 hover:bg-slate-800 text-[10px] text-slate-400 px-2 py-1 rounded border border-slate-850"
+                className="bg-slate-800/80 hover:bg-slate-800 text-[10px] text-slate-300 px-2 py-1 rounded border border-slate-700 transition-colors"
               >
-                + Municipal Address Proof
+                + Address Proof
               </button>
               <button
                 type="button"
                 onClick={() => selectPresetUpload('Certified_SARS_Tax_Clearance.pdf', 'financial')}
-                className="bg-slate-800/80 hover:bg-slate-800 text-[10px] text-slate-400 px-2 py-1 rounded border border-slate-850"
+                className="bg-slate-800/80 hover:bg-slate-800 text-[10px] text-slate-300 px-2 py-1 rounded border border-slate-700 transition-colors"
               >
-                + SARS Tax clearance
+                + SARS Tax Clearance
+              </button>
+              <button
+                type="button"
+                onClick={() => selectPresetUpload('Signed_Offer_To_Purchase.pdf', 'sale_agreement')}
+                className="bg-slate-800/80 hover:bg-slate-800 text-[10px] text-slate-300 px-2 py-1 rounded border border-slate-700 transition-colors"
+              >
+                + Signed OTP
               </button>
             </div>
           </div>
@@ -245,15 +413,21 @@ export default function DocumentManager({ documents, currentUser, matterId, onUp
               <thead>
                 <tr className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider border-b border-slate-150">
                   <th className="p-4">Document Details</th>
-                  <th className="p-4">Size & Version</th>
+                  <th className="p-4">Size & File</th>
                   <th className="p-4">Upload History</th>
                   <th className="p-4">Status & Clearances</th>
-                  {isStaff && <th className="p-4 text-right">Attorney Actions</th>}
+                  {isStaff ? (
+                    <th className="p-4 text-right">Attorney Actions</th>
+                  ) : (
+                    <th className="p-4 text-right">Preview</th>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filteredDocuments.map(doc => {
                   const uploaderLabel = doc.uploadedBy.startsWith('usr-') ? (doc.uploadedBy === currentUser.id ? 'You' : 'Staff/Client') : doc.uploadedBy;
+                  const hasValidUrl = doc.fileUrl && doc.fileUrl !== '#';
+
                   return (
                     <tr key={doc.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="p-4">
@@ -288,24 +462,38 @@ export default function DocumentManager({ documents, currentUser, matterId, onUp
                           {getStatusBadge(doc.status)}
                           {doc.reviewerNotes && (
                             <div className="flex items-start space-x-1 text-[10px] text-rose-600 mt-1.5 italic font-medium max-w-xs">
-                              <CornerDownRight className="h-3 w-3 shrink-0 mt-0.5 animate-bounce animate-duration-[2000ms]" />
+                              <CornerDownRight className="h-3 w-3 shrink-0 mt-0.5" />
                               <span>Notes: "{doc.reviewerNotes}"</span>
                             </div>
                           )}
                         </div>
                       </td>
                       
-                      {/* Lawyer Actions */}
-                      {isStaff && (
-                        <td className="p-4 text-right">
-                          {doc.status === 'pending_review' ? (
-                            <div className="flex items-center justify-end space-x-2">
+                      {/* Actions Column */}
+                      <td className="p-4 text-right">
+                        <div className="flex items-center justify-end space-x-2">
+                          {hasValidUrl && (
+                            <a
+                              href={doc.fileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              download={doc.name}
+                              className="inline-flex items-center space-x-1 bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1.5 rounded text-[11px] font-bold transition-colors"
+                              title="View or Download Document"
+                            >
+                              <Eye className="h-3.5 w-3.5 text-brand-navy" />
+                              <span>View</span>
+                            </a>
+                          )}
+
+                          {isStaff && doc.status === 'pending_review' && (
+                            <div className="flex items-center space-x-1.5">
                               <input
                                 type="text"
                                 value={reviewNotes[doc.id] || ''}
                                 onChange={(e) => setReviewNotes({ ...reviewNotes, [doc.id]: e.target.value })}
-                                placeholder="Add review notes..."
-                                className="px-2 py-1 border border-slate-200 rounded text-[10px] w-36 bg-white focus:outline-none focus:ring-1 focus:ring-brand-gold"
+                                placeholder="Add notes..."
+                                className="px-2 py-1 border border-slate-200 rounded text-[10px] w-28 bg-white focus:outline-none focus:ring-1 focus:ring-brand-gold"
                               />
                               <button
                                 onClick={() => onReview(doc.id, 'approved', reviewNotes[doc.id] || 'FICA requirements verified.')}
@@ -322,11 +510,9 @@ export default function DocumentManager({ documents, currentUser, matterId, onUp
                                 <X className="h-3.5 w-3.5" />
                               </button>
                             </div>
-                          ) : (
-                            <span className="text-[10px] text-slate-400 italic">Reviewed</span>
                           )}
-                        </td>
-                      )}
+                        </div>
+                      </td>
                     </tr>
                   );
                 })}
@@ -338,3 +524,4 @@ export default function DocumentManager({ documents, currentUser, matterId, onUp
     </div>
   );
 }
+

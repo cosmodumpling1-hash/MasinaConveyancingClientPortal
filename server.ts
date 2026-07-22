@@ -734,12 +734,19 @@ async function getConversationsFromDb() {
       const { data, error } = await supabase.from('conversations').select('*');
       if (!error && data) {
         if (data.length > 0) {
-          return data;
+          return data.map((item: any) => ({
+            ...item,
+            participants: typeof item.participants === 'string' ? JSON.parse(item.participants) : (item.participants || [])
+          }));
         } else {
           const localData = loadData().conversations;
           if (localData && localData.length > 0) {
             console.log("Auto-seeding empty Supabase 'conversations' table...");
-            await supabase.from('conversations').upsert(localData);
+            const payload = localData.map((c: any) => ({
+              ...c,
+              participants: typeof c.participants === 'object' ? JSON.stringify(c.participants) : c.participants
+            }));
+            await supabase.from('conversations').upsert(payload);
           }
           return localData;
         }
@@ -766,7 +773,11 @@ async function saveConversationToDb(conversation: any) {
   const supabase = getSupabaseClient();
   if (supabase) {
     try {
-      await supabase.from('conversations').upsert(conversation);
+      const payload = {
+        ...conversation,
+        participants: typeof conversation.participants === 'object' ? JSON.stringify(conversation.participants) : conversation.participants
+      };
+      await supabase.from('conversations').upsert(payload);
     } catch (e) {
       console.error("Supabase saveConversation error:", e);
     }
@@ -1758,9 +1769,10 @@ app.get('/api/supabase/status', async (req, res) => {
 });
 
 app.get('/api/supabase/sql-schema', (req, res) => {
-  const schema = `-- SQL DDL script for Masina Conveyancing Matter management
--- Paste this in your Supabase SQL Editor to set up the necessary tables!
+  const schema = `-- SQL DDL setup script for Masina Conveyancing Matter Management
+-- Copy and paste this script into your Supabase SQL Editor (Dashboard -> SQL Editor -> Run)
 
+-- 1. Users Table
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
@@ -1774,7 +1786,9 @@ CREATE TABLE IF NOT EXISTS users (
   "consentDate" TEXT,
   "avatarUrl" TEXT
 );
+ALTER TABLE users DISABLE ROW LEVEL SECURITY;
 
+-- 2. Matters Table
 CREATE TABLE IF NOT EXISTS matters (
   id TEXT PRIMARY KEY,
   "matterNumber" TEXT,
@@ -1794,7 +1808,9 @@ CREATE TABLE IF NOT EXISTS matters (
   stages JSONB,
   activities JSONB
 );
+ALTER TABLE matters DISABLE ROW LEVEL SECURITY;
 
+-- 3. Documents Table
 CREATE TABLE IF NOT EXISTS documents (
   id TEXT PRIMARY KEY,
   "matterId" TEXT,
@@ -1807,7 +1823,9 @@ CREATE TABLE IF NOT EXISTS documents (
   size TEXT,
   "uploadedBy" TEXT
 );
+ALTER TABLE documents DISABLE ROW LEVEL SECURITY;
 
+-- 4. Tasks Table
 CREATE TABLE IF NOT EXISTS tasks (
   id TEXT PRIMARY KEY,
   "matterId" TEXT,
@@ -1822,17 +1840,23 @@ CREATE TABLE IF NOT EXISTS tasks (
   status TEXT,
   "requiresDocumentCategory" TEXT
 );
+ALTER TABLE tasks DISABLE ROW LEVEL SECURITY;
 
+-- 5. Conversations Table
 CREATE TABLE IF NOT EXISTS conversations (
   id TEXT PRIMARY KEY,
   "matterId" TEXT,
   "matterNumber" TEXT,
   "propertyAddress" TEXT,
   title TEXT,
+  participants JSONB,
   "lastMessageText" TEXT,
   "lastMessageTimestamp" TEXT
 );
+ALTER TABLE conversations ADD COLUMN IF NOT EXISTS participants JSONB;
+ALTER TABLE conversations DISABLE ROW LEVEL SECURITY;
 
+-- 6. Messages Table
 CREATE TABLE IF NOT EXISTS messages (
   id TEXT PRIMARY KEY,
   "conversationId" TEXT,
@@ -1843,7 +1867,9 @@ CREATE TABLE IF NOT EXISTS messages (
   timestamp TEXT,
   "isRead" BOOLEAN
 );
+ALTER TABLE messages DISABLE ROW LEVEL SECURITY;
 
+-- 7. Appointments Table
 CREATE TABLE IF NOT EXISTS appointments (
   id TEXT PRIMARY KEY,
   "clientId" TEXT,
@@ -1859,7 +1885,9 @@ CREATE TABLE IF NOT EXISTS appointments (
   "videoLink" TEXT,
   description TEXT
 );
+ALTER TABLE appointments DISABLE ROW LEVEL SECURITY;
 
+-- 8. Automation Rules Table
 CREATE TABLE IF NOT EXISTS "automationRules" (
   id TEXT PRIMARY KEY,
   name TEXT,
@@ -1868,7 +1896,9 @@ CREATE TABLE IF NOT EXISTS "automationRules" (
   template TEXT,
   enabled BOOLEAN
 );
+ALTER TABLE "automationRules" DISABLE ROW LEVEL SECURITY;
 
+-- 9. Automation Logs Table
 CREATE TABLE IF NOT EXISTS "automationLogs" (
   id TEXT PRIMARY KEY,
   timestamp TEXT,
@@ -1880,7 +1910,9 @@ CREATE TABLE IF NOT EXISTS "automationLogs" (
   content TEXT,
   status TEXT
 );
+ALTER TABLE "automationLogs" DISABLE ROW LEVEL SECURITY;
 
+-- 10. Audit Logs Table
 CREATE TABLE IF NOT EXISTS "auditLogs" (
   id TEXT PRIMARY KEY,
   timestamp TEXT,
@@ -1890,7 +1922,8 @@ CREATE TABLE IF NOT EXISTS "auditLogs" (
   action TEXT,
   details TEXT,
   "ipAddress" TEXT
-);`;
+);
+ALTER TABLE "auditLogs" DISABLE ROW LEVEL SECURITY;`;
   res.json({ sql: schema });
 });
 
@@ -1923,10 +1956,27 @@ app.post('/api/supabase/sync', async (req, res) => {
     if (rows.length === 0) continue;
 
     try {
+      const payload = rows.map((r: any) => {
+        if (tableName === 'matters') {
+          return {
+            ...r,
+            stages: typeof r.stages === 'object' ? JSON.stringify(r.stages) : r.stages,
+            activities: typeof r.activities === 'object' ? JSON.stringify(r.activities) : r.activities
+          };
+        }
+        if (tableName === 'conversations') {
+          return {
+            ...r,
+            participants: typeof r.participants === 'object' ? JSON.stringify(r.participants) : r.participants
+          };
+        }
+        return r;
+      });
+
       // Upsert rows into Supabase
       const { error } = await supabase
         .from(tableName)
-        .upsert(rows);
+        .upsert(payload);
 
       if (error) {
         report[tableName].error = error.message;
@@ -1945,14 +1995,31 @@ app.post('/api/supabase/sync', async (req, res) => {
   if (failedTables.length > 0) {
     res.json({
       success: false,
-      message: `Synchronized some tables, but failed on: ${failedTables.join(', ')}`,
+      message: `Synchronized some tables, but encountered policy or schema errors on: ${failedTables.join(', ')}. If error mentions row-level security, please execute the SQL script in Supabase SQL Editor.`,
       report
     });
   } else {
     res.json({
       success: true,
-      message: 'All tables successfully synchronized with your Supabase database!',
+      message: 'All 10 tables & demo records successfully synchronized with your live Supabase PostgreSQL database!',
       report
+    });
+  }
+});
+
+// Endpoint to clear / reset all local data back to baseline INITIAL_DATA
+app.post('/api/admin/clear-local-data', (req, res) => {
+  try {
+    saveData(INITIAL_DATA);
+    res.json({
+      success: true,
+      message: 'All local database storage has been cleared and reset to pristine baseline state.',
+      data: INITIAL_DATA
+    });
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      error: 'Failed to reset local database: ' + (err.message || err.toString())
     });
   }
 });

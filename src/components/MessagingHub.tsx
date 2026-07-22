@@ -15,8 +15,24 @@ export default function MessagingHub({ conversations, messages, currentUser, sel
   const [text, setText] = React.useState('');
   const [searchQuery, setSearchQuery] = React.useState('');
   const [simulatedAttachment, setSimulatedAttachment] = React.useState<{ name: string; url: string; type: string } | null>(null);
+  const msgFileInputRef = React.useRef<HTMLInputElement | null>(null);
 
   const activeConversation = conversations.find(c => c.id === selectedConversationId) || conversations[0];
+
+  const handleMsgFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        setSimulatedAttachment({
+          name: file.name,
+          url: evt.target?.result as string || '#',
+          type: file.type || 'application/octet-stream'
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
@@ -172,19 +188,29 @@ export default function MessagingHub({ conversations, messages, currentUser, sel
           )}
 
           <form onSubmit={handleSend} className="flex items-center space-x-2.5">
+            {/* Hidden attachment file input */}
+            <input
+              type="file"
+              ref={msgFileInputRef}
+              onChange={handleMsgFileSelect}
+              className="hidden"
+            />
+
             {/* Simulation attachment options trigger */}
             <div className="relative group">
               <button
                 type="button"
-                className="p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-slate-500 hover:text-slate-800 transition-colors"
-                title="Mock Attachment Pin"
+                onClick={() => msgFileInputRef.current?.click()}
+                className="p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+                title="Attach Document or Image"
               >
                 <Paperclip className="h-4 w-4" />
               </button>
 
               <div className="absolute bottom-12 left-0 w-64 bg-white rounded-xl shadow-2xl border border-slate-150 py-1.5 z-40 hidden group-hover:block hover:block divide-y divide-slate-100">
-                <div className="px-3 py-1.5 bg-slate-50">
-                  <span className="text-[9px] font-bold text-slate-450 uppercase block">Mock File Pins</span>
+                <div className="px-3 py-1.5 bg-slate-50 flex items-center justify-between">
+                  <span className="text-[9px] font-bold text-slate-450 uppercase block">Attach File</span>
+                  <button type="button" onClick={() => msgFileInputRef.current?.click()} className="text-[9px] text-brand-navy font-bold hover:underline">Browse...</button>
                 </div>
                 <button
                   type="button"

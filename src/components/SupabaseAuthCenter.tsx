@@ -485,35 +485,17 @@ export default function SupabaseAuthCenter({
                 Click any persona to load preset credentials instantly for rapid security check validation. (Pass: <code className="font-mono bg-slate-100 text-brand-navy px-1 py-0.5 rounded">masina123</code>)
               </p>
               
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                <button
-                  onClick={() => handleQuickLogin('john.buyer@gmail.com')}
-                  className="text-left bg-slate-50 hover:bg-slate-100 p-2.5 rounded-lg border border-slate-200/60 transition-colors cursor-pointer"
-                >
-                  <span className="font-bold text-[11px] text-slate-700 block truncate">John Buyer</span>
-                  <span className="text-[9px] text-emerald-600 font-mono font-bold block uppercase mt-0.5">Client</span>
-                </button>
-                <button
-                  onClick={() => handleQuickLogin('sarah.seller@yahoo.com')}
-                  className="text-left bg-slate-50 hover:bg-slate-100 p-2.5 rounded-lg border border-slate-200/60 transition-colors cursor-pointer"
-                >
-                  <span className="font-bold text-[11px] text-slate-700 block truncate">Sarah Seller</span>
-                  <span className="text-[9px] text-amber-600 font-mono font-bold block uppercase mt-0.5">Client</span>
-                </button>
-                <button
-                  onClick={() => handleQuickLogin('arthur@masinalaw.co.za')}
-                  className="text-left bg-slate-50 hover:bg-slate-100 p-2.5 rounded-lg border border-slate-200/60 transition-colors cursor-pointer"
-                >
-                  <span className="font-bold text-[11px] text-slate-700 block truncate">Arthur Masina</span>
-                  <span className="text-[9px] text-brand-gold-dark font-mono font-bold block uppercase mt-0.5">Attorney</span>
-                </button>
-                <button
-                  onClick={() => handleQuickLogin('sam.staff@masinalaw.co.za')}
-                  className="text-left bg-amber-50/60 hover:bg-amber-100/60 p-2.5 rounded-lg border border-amber-200/60 transition-colors cursor-pointer"
-                >
-                  <span className="font-bold text-[11px] text-slate-800 block truncate">Sam Staff</span>
-                  <span className="text-[9px] text-amber-700 font-mono font-bold block uppercase mt-0.5">Other (Pending)</span>
-                </button>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto">
+                {allUsers.map((u) => (
+                  <button
+                    key={u.id}
+                    onClick={() => handleQuickLogin(u.email)}
+                    className="text-left bg-slate-50 hover:bg-slate-100 p-2.5 rounded-lg border border-slate-200/60 transition-colors cursor-pointer"
+                  >
+                    <span className="font-bold text-[11px] text-slate-700 block truncate">{u.name}</span>
+                    <span className="text-[9px] text-brand-gold-dark font-mono font-bold block uppercase mt-0.5 truncate">{u.role}</span>
+                  </button>
+                ))}
               </div>
             </div>
           </div>
