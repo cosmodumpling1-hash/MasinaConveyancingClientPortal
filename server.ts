@@ -120,6 +120,16 @@ const INITIAL_DATA = {
       kycStatus: 'verified',
       consentAccepted: true,
       avatarUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150'
+    },
+    {
+      id: 'usr-other-1',
+      name: 'Sam Staff (Pending)',
+      email: 'sam.staff@masinalaw.co.za',
+      role: 'other',
+      phone: '+27 83 999 4321',
+      kycStatus: 'pending',
+      consentAccepted: true,
+      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'
     }
   ],
   matters: [
@@ -1033,6 +1043,55 @@ app.post('/api/auth/login', async (req, res) => {
   res.json({ user });
 });
 
+// Get all registered users
+app.get('/api/users', async (req, res) => {
+  const users = await getUsersFromDb();
+  res.json(users);
+});
+
+// Allocate or reassign a user's role (System Administrator ONLY)
+app.post('/api/users/:id/role', async (req, res) => {
+  const { role, adminUserId } = req.body;
+  const allowedRoles = ['buyer', 'seller', 'attorney', 'conveyancer', 'paralegal', 'admin', 'other'];
+  
+  if (!role || !allowedRoles.includes(role)) {
+    return res.status(400).json({ error: 'Invalid role specified for allocation.' });
+  }
+
+  const users = await getUsersFromDb();
+  const index = users.findIndex((u: any) => u.id === req.params.id);
+  
+  if (index === -1) {
+    return res.status(404).json({ error: 'User profile not found.' });
+  }
+
+  const user = users[index];
+  const oldRole = user.role;
+  user.role = role;
+
+  await saveUserToDb(user);
+
+  // Update in Supabase if connected
+  const supabase = getSupabaseClient();
+  if (supabase) {
+    try {
+      await supabase.from('users').update({ role }).eq('id', user.id);
+    } catch (e) {
+      console.error("Supabase role update notice:", e);
+    }
+  }
+
+  const adminUser = users.find((u: any) => u.id === adminUserId) || { name: 'System Administrator' };
+  await logAudit(
+    adminUserId || 'usr-admin-1',
+    'ALLOCATE_USER_ROLE',
+    `System Administrator (${adminUser.name}) allocated role '${role.toUpperCase()}' (previously '${oldRole.toUpperCase()}') to user ${user.name} (${user.email}).`,
+    req
+  );
+
+  res.json({ user, message: `Role successfully allocated to ${role}.` });
+});
+
 // Create/Register new users in the conveyancing system
 app.post('/api/auth/register', async (req, res) => {
   const { name, email, role, phone, idNumber, address } = req.body;
@@ -1040,23 +1099,28 @@ app.post('/api/auth/register', async (req, res) => {
   if (!name || !email || !role) {
     return res.status(400).json({ error: 'Required fields: name, email, role.' });
   }
+
+  // Enforce staff role allocation: self-registrations can only pick buyer, seller, or other.
+  // Staff roles (attorney, conveyancer, paralegal, admin) must be allocated post-registration by a System Administrator.
+  const allowedSelfRoles = ['buyer', 'seller', 'other'];
+  const finalRole = allowedSelfRoles.includes(role) ? role : 'other';
   
   const newUser = {
     id: `usr-client-${Date.now()}`,
     name,
     email,
-    role,
+    role: finalRole,
     phone,
     idNumber,
     address,
     kycStatus: 'pending' as const,
     consentAccepted: true,
     consentDate: new Date().toISOString(),
-    avatarUrl: `https://images.unsplash.com/photo-${role === 'buyer' ? '1500648767791-00dcc994a43e' : '1494790108377-be9c29b29330'}?w=150`
+    avatarUrl: `https://images.unsplash.com/photo-${finalRole === 'buyer' ? '1500648767791-00dcc994a43e' : '1494790108377-be9c29b29330'}?w=150`
   };
   
   await saveUserToDb(newUser);
-  await logAudit(newUser.id, 'USER_REGISTER', `Created account as ${role} and accepted POPIA/GDPR regulations.`, req);
+  await logAudit(newUser.id, 'USER_REGISTER', `Created account as ${finalRole}${finalRole !== role ? ` (Converted from requested ${role} pending Admin Allocation)` : ''} and accepted POPIA/GDPR regulations.`, req);
   
   // Trigger automatic welcome notification
   await triggerWorkflowEvent(
@@ -1901,6 +1965,11 @@ app.post('/api/supabase/auth/signup', async (req, res) => {
     return res.status(400).json({ error: 'Required fields: email, password, name, role.' });
   }
 
+  // Enforce staff role allocation: self-registrations can only pick buyer, seller, or other.
+  // Staff roles (attorney, conveyancer, paralegal, admin) must be allocated post-registration by a System Administrator.
+  const allowedSelfRoles = ['buyer', 'seller', 'other'];
+  const finalRole = allowedSelfRoles.includes(role) ? role : 'other';
+
   const supabase = getSupabaseClient();
   const db = loadData();
 
@@ -1913,7 +1982,7 @@ app.post('/api/supabase/auth/signup', async (req, res) => {
         options: {
           data: {
             name,
-            role,
+            role: finalRole,
             phone,
           }
         }
@@ -1934,14 +2003,14 @@ app.post('/api/supabase/auth/signup', async (req, res) => {
         id: uid,
         name,
         email,
-        role,
+        role: finalRole,
         phone: phone || '',
         kycStatus: 'pending',
         idNumber: idNumber || '',
         address: address || '',
         consentAccepted: true,
         consentDate: new Date().toISOString(),
-        avatarUrl: `https://images.unsplash.com/photo-${role === 'buyer' ? '1500648767791-00dcc994a43e' : '1494790108377-be9c29b29330'}?w=150`
+        avatarUrl: `https://images.unsplash.com/photo-${finalRole === 'buyer' ? '1500648767791-00dcc994a43e' : '1494790108377-be9c29b29330'}?w=150`
       };
 
       const { error: insertError } = await supabase

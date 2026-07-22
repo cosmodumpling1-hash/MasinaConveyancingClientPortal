@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, Mail, Lock, UserPlus, LogIn, LogOut, CheckCircle2, RefreshCw, AlertCircle, Sparkles, User, FileText, Phone, MapPin, Key } from 'lucide-react';
+import { Shield, Mail, Lock, UserPlus, LogIn, LogOut, CheckCircle2, RefreshCw, AlertCircle, Sparkles, User, FileText, Phone, MapPin, Key, ShieldAlert } from 'lucide-react';
 import { User as UserType } from '../types';
 
 interface SupabaseAuthCenterProps {
@@ -397,13 +397,21 @@ export default function SupabaseAuthCenter({
                       >
                         <option value="buyer">Buyer Client</option>
                         <option value="seller">Seller Client</option>
-                        <option value="attorney">Attorney Staff</option>
-                        <option value="conveyancer">Conveyancer Staff</option>
-                        <option value="paralegal">Paralegal Staff</option>
-                        <option value="admin">System Administrator</option>
+                        <option value="other">Other / Pending Staff Allocation</option>
                       </select>
                     </div>
                   </div>
+                </div>
+
+                {/* Staff allocation security policy notice */}
+                <div className="bg-amber-50/90 border border-amber-200/80 rounded-xl p-3 text-[11px] text-amber-900 space-y-1 font-sans shadow-sm">
+                  <div className="font-bold flex items-center space-x-1.5 text-amber-800">
+                    <ShieldAlert className="h-4 w-4 text-amber-600 shrink-0" />
+                    <span>Staff Role Allocation Policy</span>
+                  </div>
+                  <p className="text-[10.5px] text-amber-800/90 leading-relaxed">
+                    Staff roles (Attorney, Conveyancer, Paralegal, Administrator) cannot be self-assigned upon registration. If you are firm staff, please register as <strong>Other / Pending Staff Allocation</strong>. A System Administrator will review your profile and allocate your official staff role.
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -498,6 +506,13 @@ export default function SupabaseAuthCenter({
                 >
                   <span className="font-bold text-[11px] text-slate-700 block truncate">Arthur Masina</span>
                   <span className="text-[9px] text-brand-gold-dark font-mono font-bold block uppercase mt-0.5">Attorney</span>
+                </button>
+                <button
+                  onClick={() => handleQuickLogin('sam.staff@masinalaw.co.za')}
+                  className="text-left bg-amber-50/60 hover:bg-amber-100/60 p-2.5 rounded-lg border border-amber-200/60 transition-colors cursor-pointer"
+                >
+                  <span className="font-bold text-[11px] text-slate-800 block truncate">Sam Staff</span>
+                  <span className="text-[9px] text-amber-700 font-mono font-bold block uppercase mt-0.5">Other (Pending)</span>
                 </button>
               </div>
             </div>

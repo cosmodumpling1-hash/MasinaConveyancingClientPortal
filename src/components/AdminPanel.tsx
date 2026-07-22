@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, Users, Mail, Bell, FileText, CheckCircle2, Terminal, Sparkles, RefreshCw, Copy, Check, Power, Database, ExternalLink } from 'lucide-react';
+import { Shield, Users, Mail, Bell, FileText, CheckCircle2, Terminal, Sparkles, RefreshCw, Copy, Check, Power, Database, ExternalLink, UserCheck, ShieldAlert, Clock, AlertTriangle } from 'lucide-react';
 import { User, AuditLog, AutomationRule, AutomationLog } from '../types';
 
 interface AdminPanelProps {
@@ -10,6 +10,7 @@ interface AdminPanelProps {
   automationLogs: AutomationLog[];
   onAddUser: (user: Partial<User>) => void;
   onToggleRule: (ruleId: string) => void;
+  onAllocateRole?: (userId: string, newRole: string) => void;
 }
 
 export default function AdminPanel({
@@ -19,9 +20,50 @@ export default function AdminPanel({
   automationRules,
   automationLogs,
   onAddUser,
-  onToggleRule
+  onToggleRule,
+  onAllocateRole
 }: AdminPanelProps) {
   const [activeTab, setActiveTab] = React.useState<'audit' | 'automation' | 'templates' | 'users' | 'supabase'>('audit');
+  
+  // User Management & Role Allocation state
+  const [usersList, setUsersList] = React.useState<User[]>(allUsers);
+  const [selectedRoleMap, setSelectedRoleMap] = React.useState<{ [userId: string]: string }>({});
+  const [allocatingId, setAllocatingId] = React.useState<string | null>(null);
+  const [allocationMsg, setAllocationMsg] = React.useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  React.useEffect(() => {
+    setUsersList(allUsers);
+  }, [allUsers]);
+
+  const handleAllocateRole = async (userId: string) => {
+    const targetRole = selectedRoleMap[userId];
+    if (!targetRole) return;
+
+    setAllocatingId(userId);
+    setAllocationMsg(null);
+
+    try {
+      const res = await fetch(`/api/users/${userId}/role`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: targetRole, adminUserId: currentUser.id })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to allocate role');
+
+      setUsersList(prev => prev.map(u => u.id === userId ? { ...u, role: targetRole as any } : u));
+      setAllocationMsg({ type: 'success', text: `Role successfully allocated to ${targetRole.toUpperCase()} for ${data.user.name}.` });
+      
+      if (onAllocateRole) {
+        onAllocateRole(userId, targetRole);
+      }
+    } catch (err: any) {
+      setAllocationMsg({ type: 'error', text: err.message || 'Error updating user role.' });
+    } finally {
+      setAllocatingId(null);
+    }
+  };
   
   // Supabase state
   const [supabaseConfig, setSupabaseConfig] = React.useState<{ url: string; projectId: string; hasKey: boolean } | null>(null);
@@ -429,13 +471,68 @@ export default function AdminPanel({
 
         {/* TAB 4: USER MANAGEMENT PANEL */}
         {activeTab === 'users' && (
-          <div className="space-y-6">
+          <div className="space-y-6 animate-fade-in font-sans">
+            {/* Top Summary Metric Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3.5 space-y-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block font-mono">Total System Accounts</span>
+                <span className="text-xl font-extrabold text-brand-navy block font-serif">{usersList.length}</span>
+              </div>
+              <div className="bg-amber-50/80 border border-amber-200/80 rounded-xl p-3.5 space-y-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 block font-mono">Pending Allocations</span>
+                <span className="text-xl font-extrabold text-amber-800 block font-serif">{usersList.filter(u => u.role === 'other').length}</span>
+              </div>
+              <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3.5 space-y-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block font-mono">Firm Legal Staff</span>
+                <span className="text-xl font-extrabold text-brand-gold-dark block font-serif">
+                  {usersList.filter(u => u.role === 'attorney' || u.role === 'conveyancer' || u.role === 'paralegal' || u.role === 'admin').length}
+                </span>
+              </div>
+              <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3.5 space-y-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block font-mono">Client Portal Users</span>
+                <span className="text-xl font-extrabold text-emerald-700 block font-serif">
+                  {usersList.filter(u => u.role === 'buyer' || u.role === 'seller').length}
+                </span>
+              </div>
+            </div>
+
+            {/* Pending Staff Allocation Banner */}
+            {usersList.some(u => u.role === 'other') && (
+              <div className="bg-amber-50 border border-amber-200/90 rounded-xl p-4 flex items-start space-x-3 text-amber-900 shadow-sm animate-pulse">
+                <ShieldAlert className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <h4 className="font-bold text-xs uppercase tracking-wider text-amber-800 font-mono">
+                    System Security Alert: {usersList.filter(u => u.role === 'other').length} User(s) Pending Role Allocation
+                  </h4>
+                  <p className="text-xs text-amber-800/90 leading-relaxed">
+                    Per security policy, users who registered as 'Other' (unassigned staff or custom users) cannot access practitioner privileges until a System Administrator allocates their specific role (Attorney, Conveyancer, Paralegal, Administrator, Buyer, or Seller). Select the designated role in the table below and click <strong>Allocate Role</strong>.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Feedback notification toast */}
+            {allocationMsg && (
+              <div className={`p-3 rounded-xl border text-xs font-semibold flex items-center justify-between shadow-sm animate-fade-in ${
+                allocationMsg.type === 'success' 
+                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200' 
+                  : 'bg-red-50 text-red-800 border-red-200'
+              }`}>
+                <div className="flex items-center space-x-2">
+                  <CheckCircle2 className="h-4 w-4 shrink-0" />
+                  <span>{allocationMsg.text}</span>
+                </div>
+                <button onClick={() => setAllocationMsg(null)} className="text-xs opacity-60 hover:opacity-100 font-mono">✕</button>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               
               {/* Provisioning Form */}
               <div className="bg-brand-cream/10 border border-slate-200/60 rounded-xl p-5 space-y-4 shadow-sm">
-                <h3 className="text-xs font-bold text-slate-700 uppercase tracking-widest border-b border-slate-200 pb-2">
-                  Provision Practitioner
+                <h3 className="text-xs font-bold text-slate-700 uppercase tracking-widest border-b border-slate-200 pb-2 flex items-center space-x-1.5">
+                  <Users className="h-4 w-4 text-brand-gold-dark" />
+                  <span>Direct Provision Staff</span>
                 </h3>
                 
                 <form onSubmit={handleAddTeamSubmit} className="space-y-3.5">
@@ -473,6 +570,7 @@ export default function AdminPanel({
                       <option value="paralegal">Paralegal Clerk</option>
                       <option value="conveyancer">Conveyancer Practitioner</option>
                       <option value="attorney">Associate Attorney</option>
+                      <option value="admin">System Administrator</option>
                     </select>
                   </div>
 
@@ -489,51 +587,118 @@ export default function AdminPanel({
 
                   <button
                     type="submit"
-                    className="w-full bg-brand-navy hover:bg-brand-navy/95 border border-slate-800 text-white font-bold text-xs py-2 rounded shadow-sm transition-colors cursor-pointer"
+                    className="w-full bg-brand-navy hover:bg-slate-800 border border-slate-800 text-white font-bold text-xs py-2 rounded shadow-sm transition-colors cursor-pointer"
                   >
-                    Register Team Member
+                    Provision Team Member
                   </button>
                 </form>
               </div>
 
               {/* Active Users Table list */}
               <div className="lg:col-span-2 border border-slate-200/60 rounded-xl overflow-hidden bg-white shadow-premium p-5 space-y-4">
-                <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider font-sans">Registered System Accounts</h3>
+                <div className="flex items-center justify-between border-b border-slate-150 pb-3">
+                  <div>
+                    <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider font-sans flex items-center space-x-1.5">
+                      <UserCheck className="h-4 w-4 text-brand-gold" />
+                      <span>Registered User Accounts & Administrator Role Allocation</span>
+                    </h3>
+                    <p className="text-[11px] text-slate-400 mt-0.5">Select a designated role from the dropdown and click 'Allocate Role' to update system permissions.</p>
+                  </div>
+                </div>
+
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
                     <thead>
                       <tr className="bg-brand-cream/20 border-b border-slate-200/60 font-bold uppercase text-slate-600 font-sans">
                         <th className="p-3">User Entity</th>
-                        <th className="p-3">Assigned Role</th>
-                        <th className="p-3">Contact</th>
-                        <th className="p-3">KYC Clearing State</th>
+                        <th className="p-3">Current Role</th>
+                        <th className="p-3">Administrator Role Allocation</th>
+                        <th className="p-3">KYC Clearing</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-medium text-slate-600">
-                      {allUsers.map(user => (
-                        <tr key={user.id} className="hover:bg-brand-cream/10 transition-colors animate-fade-in">
-                          <td className="p-3">
-                            <div className="flex items-center space-x-2">
-                              <img src={user.avatarUrl || 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80'} className="h-7 w-7 rounded-full object-cover border border-brand-gold/25" alt="" />
-                              <div>
-                                <span className="font-serif font-bold text-brand-navy block text-sm">{user.name}</span>
-                                <span className="text-[10px] text-slate-400 font-semibold">{user.email}</span>
+                      {usersList.map(user => {
+                        const isPending = user.role === 'other';
+                        const selectedRole = selectedRoleMap[user.id] || user.role;
+                        const hasRoleChanged = selectedRoleMap[user.id] && selectedRoleMap[user.id] !== user.role;
+
+                        return (
+                          <tr key={user.id} className={`transition-colors ${isPending ? 'bg-amber-50/40 hover:bg-amber-50/70' : 'hover:bg-brand-cream/10'}`}>
+                            <td className="p-3">
+                              <div className="flex items-center space-x-2">
+                                <img src={user.avatarUrl || 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80'} className="h-8 w-8 rounded-full object-cover border border-brand-gold/25" alt="" />
+                                <div>
+                                  <span className="font-serif font-bold text-brand-navy block text-sm">{user.name}</span>
+                                  <span className="text-[10px] text-slate-400 font-semibold">{user.email}</span>
+                                </div>
                               </div>
-                            </div>
-                          </td>
-                          <td className="p-3 uppercase font-bold text-[10px] text-brand-gold-dark font-mono">{user.role}</td>
-                          <td className="p-3 font-mono text-slate-500">{user.phone || 'N/A'}</td>
-                          <td className="p-3">
-                            <span className={`text-[9px] px-2 py-0.5 rounded font-bold uppercase font-mono tracking-wider ${
-                              user.kycStatus === 'verified'
-                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
-                                : 'bg-amber-50 text-amber-700 border border-amber-100'
-                            }`}>
-                              {user.kycStatus}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
+                            </td>
+                            <td className="p-3">
+                              {isPending ? (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold uppercase font-mono tracking-wider bg-amber-100 text-amber-800 border border-amber-300 animate-pulse">
+                                  <Clock className="h-3 w-3 mr-1" /> Pending Allocation
+                                </span>
+                              ) : (
+                                <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase font-mono tracking-wider border ${
+                                  user.role === 'admin'
+                                    ? 'bg-purple-50 text-purple-700 border-purple-200'
+                                    : user.role === 'attorney' || user.role === 'conveyancer' || user.role === 'paralegal'
+                                    ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                    : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                }`}>
+                                  {user.role}
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-3">
+                              <div className="flex items-center space-x-2">
+                                <select
+                                  value={selectedRole}
+                                  onChange={(e) => setSelectedRoleMap({ ...selectedRoleMap, [user.id]: e.target.value })}
+                                  className="bg-white border border-slate-200/80 rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-800 focus:outline-none focus:ring-1 focus:ring-brand-gold"
+                                >
+                                  <option value="buyer">Buyer Client</option>
+                                  <option value="seller">Seller Client</option>
+                                  <option value="attorney">Attorney Staff</option>
+                                  <option value="conveyancer">Conveyancer Staff</option>
+                                  <option value="paralegal">Paralegal Staff</option>
+                                  <option value="admin">System Administrator</option>
+                                  <option value="other">Other / Pending Allocation</option>
+                                </select>
+                                <button
+                                  onClick={() => handleAllocateRole(user.id)}
+                                  disabled={allocatingId === user.id || !hasRoleChanged}
+                                  className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all flex items-center space-x-1 font-mono ${
+                                    allocatingId === user.id
+                                      ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
+                                      : hasRoleChanged
+                                      ? 'bg-brand-navy hover:bg-slate-800 text-brand-gold shadow-md border border-slate-800 cursor-pointer animate-bounce'
+                                      : 'bg-slate-100 text-slate-400 border border-slate-200/60 cursor-not-allowed'
+                                  }`}
+                                >
+                                  {allocatingId === user.id ? (
+                                    <RefreshCw className="h-3 w-3 animate-spin text-brand-gold" />
+                                  ) : (
+                                    <>
+                                      <UserCheck className="h-3 w-3" />
+                                      <span>Allocate</span>
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+                            </td>
+                            <td className="p-3">
+                              <span className={`text-[9px] px-2 py-0.5 rounded font-bold uppercase font-mono tracking-wider ${
+                                user.kycStatus === 'verified'
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                                  : 'bg-amber-50 text-amber-700 border border-amber-100'
+                              }`}>
+                                {user.kycStatus}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

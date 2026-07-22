@@ -305,6 +305,14 @@ export default function App() {
     }
   };
 
+  const handleAllocateRole = async (userId: string, newRole: string) => {
+    try {
+      await refreshAllContexts(currentUser?.id);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handleToggleRule = async (ruleId: string) => {
     try {
       const res = await fetch(`/api/automation/rules/${ruleId}/toggle`, {
@@ -603,6 +611,7 @@ export default function App() {
                     automationLogs={automationLogs}
                     onAddUser={handleAddTeamMember}
                     onToggleRule={handleToggleRule}
+                    onAllocateRole={handleAllocateRole}
                   />
                 </div>
               )}
