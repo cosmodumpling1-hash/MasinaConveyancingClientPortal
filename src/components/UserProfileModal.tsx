@@ -87,7 +87,7 @@ export default function UserProfileModal({
               body: JSON.stringify({
                 fileName: file.name,
                 fileData: base64Data,
-                bucketName: 'avatars',
+                bucketName: 'mdocs',
                 folder: 'profile-pictures'
               })
             });
@@ -307,7 +307,7 @@ export default function UserProfileModal({
                       <span>{isUploadingPic ? 'Uploading to Supabase Storage...' : 'Upload Custom Photo'}</span>
                     </button>
                     <p className="text-[10px] text-slate-500">
-                      Photos are stored in the <strong className="font-mono text-slate-700">avatars</strong> Supabase Storage bucket. Replaces current avatar.
+                      Photos are stored in the <strong className="font-mono text-slate-700">mdocs</strong> Supabase Storage bucket. Replaces current avatar.
                     </p>
                   </div>
                 </div>

@@ -1126,7 +1126,7 @@ app.put('/api/users/:id', async (req, res) => {
   if (address !== undefined) user.address = address;
   if (avatarUrl !== undefined) {
     if (typeof avatarUrl === 'string' && avatarUrl.startsWith('data:image/')) {
-      const uploadRes = await uploadToSupabaseStorage(avatarUrl, `profile-${user.id}.png`, 'avatars', 'profile-pictures');
+      const uploadRes = await uploadToSupabaseStorage(avatarUrl, `profile-${user.id}.png`, 'mdocs', 'profile-pictures');
       user.avatarUrl = uploadRes.url;
     } else {
       user.avatarUrl = avatarUrl;
@@ -1423,7 +1423,7 @@ app.post('/api/documents', async (req, res) => {
   
   let finalFileUrl = fileUrl || '#';
   if (typeof fileUrl === 'string' && fileUrl.startsWith('data:')) {
-    const uploadRes = await uploadToSupabaseStorage(fileUrl, name || 'document.pdf', 'documents', category || 'fica');
+    const uploadRes = await uploadToSupabaseStorage(fileUrl, name || 'document.pdf', 'mdocs', category || 'fica');
     finalFileUrl = uploadRes.url;
   }
 
@@ -1846,7 +1846,7 @@ async function ensureSupabaseBucket(bucketName: string = 'masina-files') {
 async function uploadToSupabaseStorage(
   fileDataStr: string,
   fileName: string,
-  bucketName: string = 'masina-files',
+  bucketName: string = 'mdocs',
   folder: string = 'uploads'
 ) {
   const supabase = getSupabaseClient();
@@ -1936,7 +1936,7 @@ app.post('/api/storage/upload', async (req, res) => {
     return res.status(400).json({ error: 'Missing fileData in request body.' });
   }
 
-  const targetBucket = bucketName || 'masina-files';
+  const targetBucket = bucketName || 'mdocs';
   const targetFolder = folder || 'uploads';
   const nameToUse = fileName || `file-${Date.now()}.png`;
 
@@ -1946,7 +1946,7 @@ app.post('/api/storage/upload', async (req, res) => {
 
 app.get('/api/supabase/buckets', async (req, res) => {
   const supabase = getSupabaseClient();
-  const defaultBuckets = ['avatars', 'documents', 'attachments', 'masina-files'];
+  const defaultBuckets = ['mdocs', 'avatars', 'documents', 'attachments', 'masina-files'];
   
   if (!supabase) {
     return res.json({
@@ -2200,6 +2200,7 @@ ALTER TABLE "auditLogs" DISABLE ROW LEVEL SECURITY;
 -- 11. Storage Buckets Setup (Avatars, Documents, Attachments, Files)
 INSERT INTO storage.buckets (id, name, public) 
 VALUES 
+  ('mdocs', 'mdocs', true),
   ('avatars', 'avatars', true),
   ('documents', 'documents', true),
   ('attachments', 'attachments', true),

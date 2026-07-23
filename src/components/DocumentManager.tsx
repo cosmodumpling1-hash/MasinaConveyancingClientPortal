@@ -142,7 +142,7 @@ export default function DocumentManager({ documents, currentUser, matterId, onUp
           body: JSON.stringify({
             fileName: selectedFile?.name || finalName,
             fileData: fileDataUrl,
-            bucketName: 'documents',
+            bucketName: 'mdocs',
             folder: uploadCategory
           })
         });
@@ -159,7 +159,7 @@ export default function DocumentManager({ documents, currentUser, matterId, onUp
         size: formattedFileSize
       });
 
-      setUploadSuccessMsg(`Successfully uploaded "${finalName}" to Supabase Storage bucket ('documents')!`);
+      setUploadSuccessMsg(`Successfully uploaded "${finalName}" to Supabase Storage bucket ('mdocs')!`);
       setTimeout(() => setUploadSuccessMsg(''), 4000);
 
       // Reset state

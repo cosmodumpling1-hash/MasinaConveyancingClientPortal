@@ -36,7 +36,7 @@ export default function MessagingHub({ conversations, messages, currentUser, sel
               body: JSON.stringify({
                 fileName: file.name,
                 fileData: base64Data,
-                bucketName: 'attachments',
+                bucketName: 'mdocs',
                 folder: 'chat-files'
               })
             });

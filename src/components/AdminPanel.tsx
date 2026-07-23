@@ -897,8 +897,9 @@ export default function AdminPanel({
                     </button>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                     {[
+                      { name: 'mdocs', label: 'Primary Bucket', desc: 'Profiles & documents' },
                       { name: 'avatars', label: 'Profile Avatars', desc: 'User photo uploads' },
                       { name: 'documents', label: 'Conveyancing Docs', desc: 'FICA, deeds & contracts' },
                       { name: 'attachments', label: 'Chat Attachments', desc: 'Client portal messaging' },
