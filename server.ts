@@ -13,6 +13,16 @@ const PORT = 3000;
 
 app.use(express.json({ limit: '10mb' }));
 
+// Ensure API requests handled by Vercel function have /api prefix for Express routing
+app.use((req, res, next) => {
+  if ((process.env.VERCEL || process.env.VERCEL_ENV) && req.url) {
+    if (!req.url.startsWith('/api') && !req.url.includes('.')) {
+      req.url = '/api' + (req.url.startsWith('/') ? req.url : '/' + req.url);
+    }
+  }
+  next();
+});
+
 // Lazy initialize Gemini API client to prevent crash on startup if key is missing
 let aiClient: GoogleGenAI | null = null;
 function getGeminiClient(): GoogleGenAI | null {
