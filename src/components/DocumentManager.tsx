@@ -180,7 +180,8 @@ export default function DocumentManager({ documents, currentUser, matterId, onUp
     setCustomFileName(presetName);
     setUploadCategory(category);
     setFormattedFileSize('1.2 MB');
-    setFileDataUrl('');
+    // Set a valid minimal base64 PDF representation from the database simulation
+    setFileDataUrl('data:application/pdf;base64,JVBERi0xLjUKMSAwIG9iaj88L1R5cGUvQ2F0YWxvZy9QYWdlcyAyIDAgUj4+ZW5kb2JqMiAwIG9iajw8L1R5cGUvUGFnZXMvS2lkc1szIDAgUl0vQ291bnQgMT4+ZW5kb2JqMyAwIG9iajw8L1R5cGUvUGFnZS9QYXJlbnQgMiAwIFIvTWVkaWFCb3hbMCAwIDU5NSA4NDJdL0NvbnRlbnRzIDQgMCBSPj5lbmRvYmo0IDAgb2JqPDwvTGVuZ3RoIDU5Pj5zdHJlYW0KQlQgL0YxIDEyIFRmIDcwIDcwMCBUZCAoTWFzaW5hIExhdyAtIENvbnZleWFuY2luZyBEb2N1bWVudCkgVGogRVQKZW5kc3RyZWFtZW5kb2JqeHJlZgowIDUKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDA5IDAwMDAwIG4gCjAwMDAwMDAwNTYgMDAwMDAgbiAKMDAwMDAwMDExMSAwMDAwMCBuIAowMDAwMDAwMjEyIDAwMDAwIG4gCnRyYWlsZXI8PC9TaXplIDUvUm9vdCAxIDAgUj4+CnN0YXJ0eHJlZgowCiUlRU9G');
     setSelectedFile(null);
   };
 
