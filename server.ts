@@ -1,6 +1,7 @@
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 import { GoogleGenAI } from '@google/genai';
 import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
@@ -49,8 +50,8 @@ function getSupabaseClient() {
 }
 
 // Simple file-based database for persistence
-const DB_FILE = (process.env.VERCEL || process.env.NODE_ENV === 'production')
-  ? path.join('/tmp', 'db.json')
+const DB_FILE = (process.env.VERCEL || process.env.VERCEL_ENV || process.env.NODE_ENV === 'production')
+  ? path.join(os.tmpdir(), 'masina_db.json')
   : path.join(process.cwd(), 'db.json');
 
 // Initial baseline data
@@ -2352,9 +2353,13 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   });
 });
 
-// Serve frontend assets
+// Serve frontend assets (only when running as standalone Node process, not in Vercel Serverless Function)
 async function startServer() {
-  if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+  if (process.env.VERCEL || process.env.VERCEL_ENV) {
+    return;
+  }
+
+  if (process.env.NODE_ENV !== 'production') {
     try {
       const { createServer: createViteServer } = await import('vite');
       const vite = await createViteServer({
@@ -2375,15 +2380,15 @@ async function startServer() {
     }
   }
 
-  if (!process.env.VERCEL) {
-    app.listen(PORT, '0.0.0.0', () => {
-      console.log(`Server running on http://0.0.0.0:${PORT}`);
-    });
-  }
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on http://0.0.0.0:${PORT}`);
+  });
 }
 
 // Export express app for serverless environments like Vercel
 export default app;
 
-startServer();
+if (!process.env.VERCEL && !process.env.VERCEL_ENV) {
+  startServer();
+}
 
