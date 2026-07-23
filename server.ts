@@ -1124,7 +1124,14 @@ app.put('/api/users/:id', async (req, res) => {
   if (phone !== undefined) user.phone = phone;
   if (idNumber !== undefined) user.idNumber = idNumber;
   if (address !== undefined) user.address = address;
-  if (avatarUrl !== undefined) user.avatarUrl = avatarUrl;
+  if (avatarUrl !== undefined) {
+    if (typeof avatarUrl === 'string' && avatarUrl.startsWith('data:image/')) {
+      const uploadRes = await uploadToSupabaseStorage(avatarUrl, `profile-${user.id}.png`, 'avatars', 'profile-pictures');
+      user.avatarUrl = uploadRes.url;
+    } else {
+      user.avatarUrl = avatarUrl;
+    }
+  }
   if (subscriptionPlan !== undefined) user.subscriptionPlan = subscriptionPlan;
   if (subscribedToNewsletter !== undefined) user.subscribedToNewsletter = subscribedToNewsletter;
 
@@ -1414,12 +1421,18 @@ app.post('/api/documents', async (req, res) => {
   const { name, category, matterId, uploadedBy, fileUrl, size } = req.body;
   const matters = await getMattersFromDb();
   
+  let finalFileUrl = fileUrl || '#';
+  if (typeof fileUrl === 'string' && fileUrl.startsWith('data:')) {
+    const uploadRes = await uploadToSupabaseStorage(fileUrl, name || 'document.pdf', 'documents', category || 'fica');
+    finalFileUrl = uploadRes.url;
+  }
+
   const newDoc = {
     id: `doc-${Date.now()}`,
     matterId,
     name: name || 'Document.pdf',
     category,
-    fileUrl: fileUrl || '#',
+    fileUrl: finalFileUrl,
     uploadDate: new Date().toISOString(),
     status: 'pending_review' as const,
     version: 1,
@@ -1799,6 +1812,166 @@ AS WITNESSES:
     console.error("Gemini Template Draft error:", error);
     res.status(500).json({ error: 'Failed to draft AI template.' });
   }
+});
+
+// Supabase Storage File Buckets Helpers
+async function ensureSupabaseBucket(bucketName: string = 'masina-files') {
+  const supabase = getSupabaseClient();
+  if (!supabase) return { ready: false, message: 'Supabase client unavailable' };
+  try {
+    const { data: buckets, error: listError } = await supabase.storage.listBuckets();
+    if (!listError && Array.isArray(buckets)) {
+      const exists = buckets.some((b: any) => b.name === bucketName || b.id === bucketName);
+      if (exists) {
+        return { ready: true, bucketName, exists: true };
+      }
+    }
+    
+    // Attempt to create public storage bucket
+    const { data, error } = await supabase.storage.createBucket(bucketName, {
+      public: true,
+      fileSizeLimit: 52428800, // 50MB
+    });
+
+    if (error) {
+      console.log(`Supabase storage bucket notice for '${bucketName}': ${error.message}`);
+    }
+    return { ready: true, bucketName, created: !error };
+  } catch (err: any) {
+    console.error(`Error in ensureSupabaseBucket (${bucketName}):`, err);
+    return { ready: false, message: err?.message || String(err) };
+  }
+}
+
+async function uploadToSupabaseStorage(
+  fileDataStr: string,
+  fileName: string,
+  bucketName: string = 'masina-files',
+  folder: string = 'uploads'
+) {
+  const supabase = getSupabaseClient();
+  if (!supabase) {
+    return {
+      success: false,
+      url: fileDataStr,
+      isFallback: true,
+      reason: 'Supabase client unconfigured'
+    };
+  }
+
+  try {
+    // 1. Ensure target storage bucket exists
+    await ensureSupabaseBucket(bucketName);
+
+    // 2. Parse Base64 buffer & MIME type
+    let buffer: Buffer;
+    let mimeType = 'application/octet-stream';
+
+    if (fileDataStr.startsWith('data:')) {
+      const matches = fileDataStr.match(/^data:([a-zA-Z0-9\/\+\-\.]+);base64,(.+)$/);
+      if (matches && matches.length === 3) {
+        mimeType = matches[1];
+        buffer = Buffer.from(matches[2], 'base64');
+      } else {
+        const parts = fileDataStr.split(',');
+        buffer = Buffer.from(parts[1] || parts[0], 'base64');
+      }
+    } else {
+      buffer = Buffer.from(fileDataStr, 'utf8');
+    }
+
+    // Sanitize file name
+    const cleanName = (fileName || 'file').replace(/[^a-zA-Z0-9\.\_\-]/g, '_');
+    const filePath = `${folder}/${Date.now()}-${cleanName}`;
+
+    // 3. Upload file buffer to Supabase Storage bucket
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from(bucketName)
+      .upload(filePath, buffer, {
+        contentType: mimeType,
+        upsert: true
+      });
+
+    if (uploadError) {
+      console.error(`Supabase storage upload error in bucket '${bucketName}':`, uploadError.message);
+      // Fallback attempt to default 'masina-files' bucket if dedicated bucket upload fails
+      if (bucketName !== 'masina-files') {
+        const fallbackRes = await uploadToSupabaseStorage(fileDataStr, fileName, 'masina-files', folder);
+        if (fallbackRes.success) return fallbackRes;
+      }
+      return {
+        success: false,
+        url: fileDataStr,
+        isFallback: true,
+        reason: uploadError.message
+      };
+    }
+
+    // 4. Retrieve Public URL
+    const { data: publicUrlData } = supabase.storage.from(bucketName).getPublicUrl(filePath);
+    const publicUrl = publicUrlData?.publicUrl || '';
+
+    return {
+      success: true,
+      url: publicUrl || fileDataStr,
+      bucket: bucketName,
+      path: filePath,
+      size: buffer.length,
+      mimeType,
+      isFallback: false
+    };
+  } catch (err: any) {
+    console.error("Storage upload exception:", err);
+    return {
+      success: false,
+      url: fileDataStr,
+      isFallback: true,
+      reason: err?.message || String(err)
+    };
+  }
+}
+
+// Storage API Routes
+app.post('/api/storage/upload', async (req, res) => {
+  const { fileName, fileData, bucketName, folder } = req.body;
+
+  if (!fileData) {
+    return res.status(400).json({ error: 'Missing fileData in request body.' });
+  }
+
+  const targetBucket = bucketName || 'masina-files';
+  const targetFolder = folder || 'uploads';
+  const nameToUse = fileName || `file-${Date.now()}.png`;
+
+  const result = await uploadToSupabaseStorage(fileData, nameToUse, targetBucket, targetFolder);
+  return res.json(result);
+});
+
+app.get('/api/supabase/buckets', async (req, res) => {
+  const supabase = getSupabaseClient();
+  const defaultBuckets = ['avatars', 'documents', 'attachments', 'masina-files'];
+  
+  if (!supabase) {
+    return res.json({
+      configured: false,
+      buckets: defaultBuckets.map(b => ({ name: b, status: 'unconfigured' }))
+    });
+  }
+
+  const bucketStatuses = [];
+  for (const b of defaultBuckets) {
+    const status = await ensureSupabaseBucket(b);
+    bucketStatuses.push({
+      name: b,
+      status: status.ready ? 'ready' : 'error',
+      details: status
+    });
+  }
+
+  return res.json({
+    configured: true,
+    buckets: bucketStatuses
+  });
 });
 
 // Supabase Integration Routes

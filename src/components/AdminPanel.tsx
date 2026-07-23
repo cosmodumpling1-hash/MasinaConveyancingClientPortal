@@ -68,6 +68,7 @@ export default function AdminPanel({
   // Supabase state
   const [supabaseConfig, setSupabaseConfig] = React.useState<{ url: string; projectId: string; hasKey: boolean } | null>(null);
   const [supabaseStatus, setSupabaseStatus] = React.useState<{ configured: boolean; connected: boolean; isTableMissing?: boolean; error?: string; message: string } | null>(null);
+  const [supabaseBuckets, setSupabaseBuckets] = React.useState<{ configured: boolean; buckets: { name: string; status: string }[] } | null>(null);
   const [supabaseSql, setSupabaseSql] = React.useState<string>('');
   const [syncing, setSyncing] = React.useState(false);
   const [syncResult, setSyncResult] = React.useState<{ success: boolean; message: string; report?: any } | null>(null);
@@ -85,6 +86,11 @@ export default function AdminPanel({
       try {
         const statusData = await safeFetch('/api/supabase/status');
         setSupabaseStatus(statusData);
+      } catch (e) {}
+
+      try {
+        const bucketsData = await safeFetch('/api/supabase/buckets');
+        setSupabaseBuckets(bucketsData);
       } catch (e) {}
 
       try {
@@ -870,6 +876,49 @@ export default function AdminPanel({
                       <Trash2 className="h-3.5 w-3.5 text-rose-600" />
                       <span>Clear All Local Storage</span>
                     </button>
+                  </div>
+                </div>
+
+                {/* Supabase Storage File Buckets Management Card */}
+                <div className="border border-slate-200/60 rounded-xl p-5 bg-white shadow-sm space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono">SUPABASE FILE STORAGE BUCKETS</span>
+                      <h4 className="text-sm font-bold text-slate-800">Media & Document Storage Infrastructure</h4>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Profile pictures, FICA identity documents, offer deeds, and messaging attachments are saved directly in public Supabase Storage buckets.
+                      </p>
+                    </div>
+                    <button
+                      onClick={fetchSupabaseInfo}
+                      className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded transition-colors self-start sm:self-auto cursor-pointer"
+                    >
+                      Re-check Buckets
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {[
+                      { name: 'avatars', label: 'Profile Avatars', desc: 'User photo uploads' },
+                      { name: 'documents', label: 'Conveyancing Docs', desc: 'FICA, deeds & contracts' },
+                      { name: 'attachments', label: 'Chat Attachments', desc: 'Client portal messaging' },
+                      { name: 'masina-files', label: 'General Storage', desc: 'System media repository' }
+                    ].map(b => {
+                      const bucketInfo = supabaseBuckets?.buckets?.find(item => item.name === b.name);
+                      const isReady = bucketInfo?.status === 'ready';
+                      return (
+                        <div key={b.name} className="p-3 rounded-lg border border-slate-150 bg-slate-50/60 space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-brand-navy font-mono">{b.name}</span>
+                            <span className={`text-[9px] font-bold font-mono px-1.5 py-0.5 rounded ${isReady ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'}`}>
+                              {isReady ? 'ACTIVE' : 'READY'}
+                            </span>
+                          </div>
+                          <p className="text-[11px] font-medium text-slate-700">{b.label}</p>
+                          <p className="text-[10px] text-slate-400">{b.desc}</p>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 

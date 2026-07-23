@@ -22,6 +22,7 @@ export default function DocumentManager({ documents, currentUser, matterId, onUp
   const [fileDataUrl, setFileDataUrl] = React.useState<string>('');
   const [formattedFileSize, setFormattedFileSize] = React.useState<string>('1.5 MB');
   const [isDragging, setIsDragging] = React.useState(false);
+  const [isUploading, setIsUploading] = React.useState(false);
   const [uploadSuccessMsg, setUploadSuccessMsg] = React.useState('');
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   
@@ -118,7 +119,7 @@ export default function DocumentManager({ documents, currentUser, matterId, onUp
     }
   };
 
-  const handleUploadSubmit = (e: React.FormEvent) => {
+  const handleUploadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const fileNameToUse = customFileName.trim();
     if (!fileNameToUse) {
@@ -130,22 +131,49 @@ export default function DocumentManager({ documents, currentUser, matterId, onUp
       ? fileNameToUse
       : `${fileNameToUse}.pdf`;
 
-    onUpload({
-      name: finalName,
-      category: uploadCategory,
-      fileUrl: fileDataUrl || '#',
-      size: formattedFileSize
-    });
+    setIsUploading(true);
+    let finalUrl = fileDataUrl || '#';
 
-    setUploadSuccessMsg(`Successfully uploaded "${finalName}" to ${uploadCategory.toUpperCase()} folder!`);
-    setTimeout(() => setUploadSuccessMsg(''), 4000);
+    try {
+      if (fileDataUrl && fileDataUrl.startsWith('data:')) {
+        const res = await fetch('/api/storage/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fileName: selectedFile?.name || finalName,
+            fileData: fileDataUrl,
+            bucketName: 'documents',
+            folder: uploadCategory
+          })
+        });
+        const storageData = await res.json();
+        if (storageData.url) {
+          finalUrl = storageData.url;
+        }
+      }
 
-    // Reset state
-    setSelectedFile(null);
-    setCustomFileName('');
-    setFileDataUrl('');
-    setFormattedFileSize('1.5 MB');
-    if (fileInputRef.current) fileInputRef.current.value = '';
+      onUpload({
+        name: finalName,
+        category: uploadCategory,
+        fileUrl: finalUrl,
+        size: formattedFileSize
+      });
+
+      setUploadSuccessMsg(`Successfully uploaded "${finalName}" to Supabase Storage bucket ('documents')!`);
+      setTimeout(() => setUploadSuccessMsg(''), 4000);
+
+      // Reset state
+      setSelectedFile(null);
+      setCustomFileName('');
+      setFileDataUrl('');
+      setFormattedFileSize('1.5 MB');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    } catch (err: any) {
+      console.error("Document storage upload failed:", err);
+      alert("Failed to upload document to Supabase storage.");
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const selectPresetUpload = (presetName: string, category: DocumentCategory) => {
@@ -320,10 +348,20 @@ export default function DocumentManager({ documents, currentUser, matterId, onUp
 
             <button
               type="submit"
-              className="w-full bg-brand-gold hover:bg-brand-gold-dark text-slate-950 font-bold text-xs py-2.5 rounded-lg shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer"
+              disabled={isUploading}
+              className="w-full bg-brand-gold hover:bg-brand-gold-dark disabled:opacity-50 text-slate-950 font-bold text-xs py-2.5 rounded-lg shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer"
             >
-              <Upload className="h-4 w-4 text-slate-950" />
-              <span>Upload Document to Cloud</span>
+              {isUploading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-slate-950 border-t-transparent" />
+                  <span>Uploading to Supabase Storage...</span>
+                </>
+              ) : (
+                <>
+                  <Upload className="h-4 w-4 text-slate-950" />
+                  <span>Upload Document to Supabase Storage</span>
+                </>
+              )}
             </button>
           </form>
 

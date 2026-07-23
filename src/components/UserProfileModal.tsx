@@ -35,6 +35,7 @@ export default function UserProfileModal({
 
   // Status & feedback
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [isUploadingPic, setIsUploadingPic] = React.useState(false);
   const [successMessage, setSuccessMessage] = React.useState('');
   const [errorMessage, setErrorMessage] = React.useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
@@ -66,16 +67,50 @@ export default function UserProfileModal({
     'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150',
   ];
 
-  const handlePictureUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePictureUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        if (evt.target?.result) {
-          setAvatarUrl(evt.target.result as string);
-        }
-      };
-      reader.readAsDataURL(file);
+      setIsUploadingPic(true);
+      setErrorMessage('');
+      setSuccessMessage('');
+
+      try {
+        const reader = new FileReader();
+        reader.onload = async (evt) => {
+          if (evt.target?.result) {
+            const base64Data = evt.target.result as string;
+
+            // Upload directly to Supabase Storage file bucket
+            const res = await fetch('/api/storage/upload', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                fileName: file.name,
+                fileData: base64Data,
+                bucketName: 'avatars',
+                folder: 'profile-pictures'
+              })
+            });
+
+            const data = await res.json();
+            if (data.url) {
+              setAvatarUrl(data.url);
+              if (data.isFallback) {
+                setSuccessMessage('Photo processed and updated!');
+              } else {
+                setSuccessMessage(`Saved in Supabase Storage bucket ('${data.bucket}')!`);
+              }
+              setTimeout(() => setSuccessMessage(''), 4000);
+            }
+            setIsUploadingPic(false);
+          }
+        };
+        reader.readAsDataURL(file);
+      } catch (err: any) {
+        console.error("Profile picture upload error:", err);
+        setErrorMessage("Failed to upload image file.");
+        setIsUploadingPic(false);
+      }
     }
   };
 
@@ -230,9 +265,15 @@ export default function UserProfileModal({
               
               {/* Picture Upload Zone */}
               <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                  Profile Picture & Avatar
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                    Profile Picture & Avatar
+                  </label>
+                  <span className="text-[10px] bg-emerald-100 text-emerald-800 font-mono px-2 py-0.5 rounded font-bold border border-emerald-200 flex items-center space-x-1">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>SUPABASE BUCKET: ACTIVE</span>
+                  </span>
+                </div>
 
                 <input
                   type="file"
@@ -243,21 +284,31 @@ export default function UserProfileModal({
                 />
 
                 <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-4">
-                  <img
-                    src={avatarUrl || 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150'}
-                    className="h-16 w-16 rounded-full border-2 border-brand-gold object-cover shadow-sm shrink-0"
-                    alt="Current Avatar"
-                  />
+                  <div className="relative">
+                    <img
+                      src={avatarUrl || 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150'}
+                      className="h-16 w-16 rounded-full border-2 border-brand-gold object-cover shadow-sm shrink-0"
+                      alt="Current Avatar"
+                    />
+                    {isUploadingPic && (
+                      <div className="absolute inset-0 bg-slate-900/60 rounded-full flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-brand-gold border-t-transparent"></div>
+                      </div>
+                    )}
+                  </div>
                   <div className="flex-1 space-y-2 text-center sm:text-left">
                     <button
                       type="button"
+                      disabled={isUploadingPic}
                       onClick={() => fileInputRef.current?.click()}
-                      className="inline-flex items-center space-x-1.5 bg-brand-navy hover:bg-slate-800 text-white font-bold text-xs px-3.5 py-2 rounded-lg transition-colors cursor-pointer"
+                      className="inline-flex items-center space-x-1.5 bg-brand-navy hover:bg-slate-800 disabled:opacity-50 text-white font-bold text-xs px-3.5 py-2 rounded-lg transition-colors cursor-pointer"
                     >
                       <Upload className="h-3.5 w-3.5 text-brand-gold" />
-                      <span>Upload Custom Photo</span>
+                      <span>{isUploadingPic ? 'Uploading to Supabase Storage...' : 'Upload Custom Photo'}</span>
                     </button>
-                    <p className="text-[10px] text-slate-500">Supports JPG, PNG or WebP. Replaces current avatar.</p>
+                    <p className="text-[10px] text-slate-500">
+                      Photos are stored in the <strong className="font-mono text-slate-700">avatars</strong> Supabase Storage bucket. Replaces current avatar.
+                    </p>
                   </div>
                 </div>
 

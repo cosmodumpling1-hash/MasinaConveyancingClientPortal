@@ -14,6 +14,7 @@ interface MessagingHubProps {
 export default function MessagingHub({ conversations, messages, currentUser, selectedConversationId, onSendMessage, onRefresh }: MessagingHubProps) {
   const [text, setText] = React.useState('');
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [isUploadingAttachment, setIsUploadingAttachment] = React.useState(false);
   const [simulatedAttachment, setSimulatedAttachment] = React.useState<{ name: string; url: string; type: string } | null>(null);
   const msgFileInputRef = React.useRef<HTMLInputElement | null>(null);
 
@@ -22,13 +23,40 @@ export default function MessagingHub({ conversations, messages, currentUser, sel
   const handleMsgFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      setIsUploadingAttachment(true);
+
       const reader = new FileReader();
-      reader.onload = (evt) => {
-        setSimulatedAttachment({
-          name: file.name,
-          url: evt.target?.result as string || '#',
-          type: file.type || 'application/octet-stream'
-        });
+      reader.onload = async (evt) => {
+        if (evt.target?.result) {
+          const base64Data = evt.target.result as string;
+          try {
+            const res = await fetch('/api/storage/upload', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                fileName: file.name,
+                fileData: base64Data,
+                bucketName: 'attachments',
+                folder: 'chat-files'
+              })
+            });
+            const data = await res.json();
+            setSimulatedAttachment({
+              name: file.name,
+              url: data.url || base64Data,
+              type: file.type || 'application/octet-stream'
+            });
+          } catch (err) {
+            console.error("Failed to upload attachment to Supabase storage:", err);
+            setSimulatedAttachment({
+              name: file.name,
+              url: base64Data,
+              type: file.type || 'application/octet-stream'
+            });
+          } finally {
+            setIsUploadingAttachment(false);
+          }
+        }
       };
       reader.readAsDataURL(file);
     }
