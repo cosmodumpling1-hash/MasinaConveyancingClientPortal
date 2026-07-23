@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, Users, Landmark, Scale, LogOut, ChevronDown } from 'lucide-react';
+import { Shield, Users, Landmark, Scale, LogOut, ChevronDown, FileText } from 'lucide-react';
 import { User } from '../types';
 import MasinaLogo from './MasinaLogo';
 
@@ -8,9 +8,11 @@ interface NavbarProps {
   allUsers: User[];
   onSwitchUser: (userId: string) => void;
   onLogout: () => void;
+  onOpenProfileModal?: () => void;
+  onOpenLegalModal?: (tab?: 'privacy' | 'terms') => void;
 }
 
-export default function Navbar({ currentUser, allUsers, onSwitchUser, onLogout }: NavbarProps) {
+export default function Navbar({ currentUser, allUsers, onSwitchUser, onLogout, onOpenProfileModal, onOpenLegalModal }: NavbarProps) {
   const [dropdownOpen, setDropdownOpen] = React.useState(false);
 
   const getRoleBadge = (role: string) => {
@@ -41,13 +43,24 @@ export default function Navbar({ currentUser, allUsers, onSwitchUser, onLogout }
             <MasinaLogo size="md" />
           </div>
 
-          {/* Center Sandbox Information */}
-          <div className="hidden md:flex items-center space-x-2 text-xs text-slate-500 bg-brand-cream px-3 py-1.5 rounded-lg border border-slate-100">
-            <span className="flex h-2 w-2 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            <span className="font-mono text-[11px] font-medium text-slate-600">POPIA & GDPR Compliant Security Active</span>
+          {/* Center Sandbox & Legal Governance Information */}
+          <div className="hidden md:flex items-center space-x-3">
+            <div className="flex items-center space-x-2 text-xs text-slate-500 bg-brand-cream px-3 py-1.5 rounded-lg border border-slate-100">
+              <span className="flex h-2 w-2 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span className="font-mono text-[11px] font-medium text-slate-600">POPIA & GDPR Active</span>
+            </div>
+
+            <button
+              onClick={() => onOpenLegalModal?.('privacy')}
+              className="flex items-center space-x-1.5 text-xs font-semibold text-slate-600 hover:text-brand-navy bg-slate-50 hover:bg-slate-100/80 px-3 py-1.5 rounded-lg border border-slate-200/70 transition-colors cursor-pointer"
+              title="Read Privacy Policy and Terms & Conditions"
+            >
+              <Scale className="h-3.5 w-3.5 text-brand-gold-dark" />
+              <span>Privacy & Terms</span>
+            </button>
           </div>
 
           {/* Right Action Switcher Panel */}
@@ -97,20 +110,27 @@ export default function Navbar({ currentUser, allUsers, onSwitchUser, onLogout }
 
             {/* User Profile Info */}
             <div className="hidden sm:flex items-center space-x-3 border-l border-slate-100 pl-4">
-              <img
-                src={currentUser.avatarUrl || 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150'}
-                className="h-9 w-9 rounded-full ring-2 ring-brand-gold/10 border border-white object-cover"
-                alt="Profile"
-              />
-              <div className="text-left leading-none">
-                <p className="text-xs font-bold text-slate-800 leading-none">{currentUser.name}</p>
-                <span className="text-[9px] uppercase tracking-wider font-bold text-brand-gold-dark block mt-1.5 font-sans">
-                  {currentUser.role}
-                </span>
-              </div>
+              <button
+                onClick={onOpenProfileModal}
+                className="flex items-center space-x-2.5 p-1 rounded-xl hover:bg-slate-100/80 transition-colors cursor-pointer text-left group"
+                title="Edit Profile, Avatar & Subscription"
+              >
+                <img
+                  src={currentUser.avatarUrl || 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150'}
+                  className="h-9 w-9 rounded-full ring-2 ring-brand-gold/30 group-hover:ring-brand-gold border border-white object-cover transition-all"
+                  alt="Profile"
+                />
+                <div className="text-left leading-none">
+                  <p className="text-xs font-bold text-slate-800 leading-none group-hover:text-brand-navy transition-colors">{currentUser.name}</p>
+                  <span className="text-[9px] uppercase tracking-wider font-bold text-brand-gold-dark block mt-1.5 font-sans">
+                    {currentUser.role} • {currentUser.subscriptionPlan || 'free'}
+                  </span>
+                </div>
+              </button>
+
               <button
                 onClick={onLogout}
-                className="p-1.5 ml-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50/50 transition-colors cursor-pointer"
+                className="p-1.5 ml-1 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50/50 transition-colors cursor-pointer"
                 title="Sign Out Session"
               >
                 <LogOut className="h-4 w-4" />

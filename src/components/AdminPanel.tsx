@@ -11,6 +11,7 @@ interface AdminPanelProps {
   onAddUser: (user: Partial<User>) => void;
   onToggleRule: (ruleId: string) => void;
   onAllocateRole?: (userId: string, newRole: string) => void;
+  onDeleteUser?: (userId: string) => Promise<void>;
 }
 
 export default function AdminPanel({
@@ -21,7 +22,8 @@ export default function AdminPanel({
   automationLogs,
   onAddUser,
   onToggleRule,
-  onAllocateRole
+  onAllocateRole,
+  onDeleteUser
 }: AdminPanelProps) {
   const [activeTab, setActiveTab] = React.useState<'audit' | 'automation' | 'templates' | 'users' | 'supabase'>('audit');
   
@@ -630,6 +632,7 @@ export default function AdminPanel({
                         <th className="p-3">Current Role</th>
                         <th className="p-3">Administrator Role Allocation</th>
                         <th className="p-3">KYC Clearing</th>
+                        <th className="p-3 text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-medium text-slate-600">
@@ -711,6 +714,21 @@ export default function AdminPanel({
                               }`}>
                                 {user.kycStatus}
                               </span>
+                            </td>
+                            <td className="p-3 text-right">
+                              <button
+                                onClick={async () => {
+                                  if (confirm(`Are you sure you want to delete user ${user.name} (${user.email})?`)) {
+                                    if (onDeleteUser) {
+                                      await onDeleteUser(user.id);
+                                    }
+                                  }
+                                }}
+                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                title="Delete user account"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
                             </td>
                           </tr>
                         );

@@ -575,6 +575,21 @@ async function saveUserToDb(user: any) {
   }
 }
 
+async function deleteUserFromDb(userId: string) {
+  const db = loadData();
+  db.users = db.users.filter((u: any) => u.id !== userId);
+  saveData(db);
+
+  const supabase = getSupabaseClient();
+  if (supabase) {
+    try {
+      await supabase.from('users').delete().eq('id', userId);
+    } catch (e) {
+      console.error("Supabase deleteUser error:", e);
+    }
+  }
+}
+
 async function getMattersFromDb() {
   const supabase = getSupabaseClient();
   if (supabase) {
@@ -1058,6 +1073,55 @@ app.post('/api/auth/login', async (req, res) => {
 app.get('/api/users', async (req, res) => {
   const users = await getUsersFromDb();
   res.json(users);
+});
+
+// Update user profile info & picture
+app.put('/api/users/:id', async (req, res) => {
+  const { name, email, phone, idNumber, address, avatarUrl, subscriptionPlan, subscribedToNewsletter } = req.body;
+  const users = await getUsersFromDb();
+  const user = users.find((u: any) => u.id === req.params.id);
+  if (!user) return res.status(404).json({ error: 'User profile not found.' });
+
+  if (name !== undefined) user.name = name;
+  if (email !== undefined) user.email = email;
+  if (phone !== undefined) user.phone = phone;
+  if (idNumber !== undefined) user.idNumber = idNumber;
+  if (address !== undefined) user.address = address;
+  if (avatarUrl !== undefined) user.avatarUrl = avatarUrl;
+  if (subscriptionPlan !== undefined) user.subscriptionPlan = subscriptionPlan;
+  if (subscribedToNewsletter !== undefined) user.subscribedToNewsletter = subscribedToNewsletter;
+
+  await saveUserToDb(user);
+  await logAudit(user.id, 'USER_UPDATE_PROFILE', `Updated profile info for ${user.name} (${user.email})`, req);
+  res.json({ user, message: 'Profile updated successfully.' });
+});
+
+// Delete user account
+app.delete('/api/users/:id', async (req, res) => {
+  const userId = req.params.id;
+  const users = await getUsersFromDb();
+  const user = users.find((u: any) => u.id === userId);
+  if (!user) return res.status(404).json({ error: 'User profile not found.' });
+
+  await deleteUserFromDb(userId);
+  await logAudit(userId, 'USER_DELETE', `Deleted user account ${user.name} (${user.email})`, req);
+  res.json({ success: true, message: `User ${user.name} deleted successfully.` });
+});
+
+// Update user subscription plan or newsletter status
+app.post('/api/users/:id/subscribe', async (req, res) => {
+  const { plan, subscribedToNewsletter } = req.body;
+  const users = await getUsersFromDb();
+  const user = users.find((u: any) => u.id === req.params.id);
+  if (!user) return res.status(404).json({ error: 'User profile not found.' });
+
+  if (plan) user.subscriptionPlan = plan;
+  if (subscribedToNewsletter !== undefined) user.subscribedToNewsletter = subscribedToNewsletter;
+  user.subscriptionStatus = 'active';
+
+  await saveUserToDb(user);
+  await logAudit(user.id, 'USER_SUBSCRIBE', `Updated subscription plan to '${plan || user.subscriptionPlan || 'free'}' and newsletter preference`, req);
+  res.json({ user, message: 'Subscription preferences updated successfully.' });
 });
 
 // Allocate or reassign a user's role (System Administrator ONLY)

@@ -16,6 +16,8 @@ import AppointmentCalendar from './components/AppointmentCalendar';
 import AnalyticsDashboard from './components/AnalyticsDashboard';
 import AdminPanel from './components/AdminPanel';
 import SupabaseAuthCenter from './components/SupabaseAuthCenter';
+import UserProfileModal from './components/UserProfileModal';
+import LegalModal from './components/LegalModal';
 import MasinaLogo from './components/MasinaLogo';
 
 export default function App() {
@@ -23,6 +25,9 @@ export default function App() {
   const [currentUser, setCurrentUser] = React.useState<User | null>(null);
   const [selectedMatterId, setSelectedMatterId] = React.useState<string>('mat-1');
   const [allUsers, setAllUsers] = React.useState<User[]>([]);
+  const [isProfileModalOpen, setIsProfileModalOpen] = React.useState<boolean>(false);
+  const [isLegalModalOpen, setIsLegalModalOpen] = React.useState<boolean>(false);
+  const [legalInitialTab, setLegalInitialTab] = React.useState<'privacy' | 'terms'>('privacy');
 
   // Navigation tab controls (depends on Client vs Staff role)
   const [activeTab, setActiveTab] = React.useState<string>('dashboard');
@@ -337,6 +342,67 @@ export default function App() {
     }
   };
 
+  const handleUpdateUserProfile = async (updatedFields: Partial<User>) => {
+    if (!currentUser) return;
+    try {
+      const res = await fetch(`/api/users/${currentUser.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedFields)
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCurrentUser(data.user);
+        await refreshAllContexts(data.user.id);
+      } else {
+        throw new Error('Failed to update profile.');
+      }
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      const res = await fetch(`/api/users/${userId}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        if (currentUser?.id === userId) {
+          setCurrentUser(null);
+        }
+        await refreshAllContexts();
+      } else {
+        throw new Error('Failed to delete user account.');
+      }
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
+  };
+
+  const handleSubscribe = async (plan: 'free' | 'pro' | 'enterprise', newsletter: boolean) => {
+    if (!currentUser) return;
+    try {
+      const res = await fetch(`/api/users/${currentUser.id}/subscribe`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan, subscribedToNewsletter: newsletter })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCurrentUser(data.user);
+        await refreshAllContexts(data.user.id);
+      } else {
+        throw new Error('Failed to update subscription status.');
+      }
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-brand-navy flex flex-col items-center justify-center p-6 text-emerald-400 font-mono">
@@ -364,8 +430,33 @@ export default function App() {
               setCurrentUser(null);
             }}
             allUsers={allUsers}
+            onOpenLegalModal={(tab) => {
+              if (tab) setLegalInitialTab(tab);
+              setIsLegalModalOpen(true);
+            }}
           />
+          <div className="text-center text-xs text-slate-500 pt-2 flex items-center justify-center space-x-4">
+            <button
+              onClick={() => { setLegalInitialTab('privacy'); setIsLegalModalOpen(true); }}
+              className="hover:text-brand-navy underline cursor-pointer"
+            >
+              Privacy Policy (POPIA)
+            </button>
+            <span>•</span>
+            <button
+              onClick={() => { setLegalInitialTab('terms'); setIsLegalModalOpen(true); }}
+              className="hover:text-brand-navy underline cursor-pointer"
+            >
+              Terms & Conditions
+            </button>
+          </div>
         </div>
+
+        <LegalModal 
+          isOpen={isLegalModalOpen} 
+          onClose={() => setIsLegalModalOpen(false)} 
+          initialTab={legalInitialTab} 
+        />
       </div>
     );
   }
@@ -401,6 +492,11 @@ export default function App() {
         currentUser={currentUser} 
         allUsers={allUsers} 
         onSwitchUser={handleSwitchUser} 
+        onOpenProfileModal={() => setIsProfileModalOpen(true)}
+        onOpenLegalModal={(tab) => {
+          if (tab) setLegalInitialTab(tab);
+          setIsLegalModalOpen(true);
+        }}
         onLogout={async () => {
           try {
             await fetch('/api/supabase/auth/logout', {
@@ -500,6 +596,10 @@ export default function App() {
                   setCurrentUser(null);
                 }}
                 allUsers={allUsers}
+                onOpenLegalModal={(tab) => {
+                  if (tab) setLegalInitialTab(tab);
+                  setIsLegalModalOpen(true);
+                }}
               />
             </div>
           )}
@@ -615,6 +715,7 @@ export default function App() {
                     onAddUser={handleAddTeamMember}
                     onToggleRule={handleToggleRule}
                     onAllocateRole={handleAllocateRole}
+                    onDeleteUser={handleDeleteUser}
                   />
                 </div>
               )}
@@ -742,6 +843,21 @@ export default function App() {
         </main>
 
       </div>
+
+      <UserProfileModal 
+        user={currentUser}
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        onUpdateUser={handleUpdateUserProfile}
+        onDeleteUser={handleDeleteUser}
+        onSubscribe={handleSubscribe}
+      />
+
+      <LegalModal 
+        isOpen={isLegalModalOpen} 
+        onClose={() => setIsLegalModalOpen(false)} 
+        initialTab={legalInitialTab} 
+      />
     </div>
   );
 }

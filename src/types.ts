@@ -12,6 +12,9 @@ export interface User {
   consentAccepted: boolean;
   consentDate?: string;
   avatarUrl?: string;
+  subscriptionPlan?: 'free' | 'pro' | 'enterprise';
+  subscriptionStatus?: 'active' | 'inactive' | 'cancelled' | 'trial';
+  subscribedToNewsletter?: boolean;
 }
 
 export type DocumentCategory = 

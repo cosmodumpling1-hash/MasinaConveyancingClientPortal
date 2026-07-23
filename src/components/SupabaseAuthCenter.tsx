@@ -7,13 +7,15 @@ interface SupabaseAuthCenterProps {
   onLoginSuccess: (user: UserType) => void;
   onLogoutSuccess: () => void;
   allUsers: UserType[];
+  onOpenLegalModal?: (tab?: 'privacy' | 'terms') => void;
 }
 
 export default function SupabaseAuthCenter({
   currentUser,
   onLoginSuccess,
   onLogoutSuccess,
-  allUsers
+  allUsers,
+  onOpenLegalModal
 }: SupabaseAuthCenterProps) {
   const [activeTab, setActiveTab] = React.useState<'login' | 'signup'>('login');
   const [loading, setLoading] = React.useState(false);
@@ -31,6 +33,7 @@ export default function SupabaseAuthCenter({
   const [phone, setPhone] = React.useState('');
   const [idNumber, setIdNumber] = React.useState('');
   const [address, setAddress] = React.useState('');
+  const [consentAccepted, setConsentAccepted] = React.useState(true);
 
   const fetchConfig = async () => {
     try {
@@ -88,6 +91,11 @@ export default function SupabaseAuthCenter({
       return;
     }
 
+    if (!consentAccepted) {
+      setError('You must accept the Privacy Policy and Terms & Conditions to register.');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setSuccess(null);
@@ -103,7 +111,8 @@ export default function SupabaseAuthCenter({
           role,
           phone,
           idNumber,
-          address
+          address,
+          consentAccepted: true
         })
       });
 
@@ -458,9 +467,39 @@ export default function SupabaseAuthCenter({
                   </div>
                 </div>
 
+                {/* Consent Checkbox with Links */}
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-start space-x-2.5 text-xs text-slate-600">
+                  <input
+                    type="checkbox"
+                    id="signup-consent"
+                    checked={consentAccepted}
+                    onChange={(e) => setConsentAccepted(e.target.checked)}
+                    className="mt-0.5 rounded border-slate-300 text-brand-navy focus:ring-brand-gold h-4 w-4 cursor-pointer"
+                  />
+                  <label htmlFor="signup-consent" className="text-[11px] leading-snug cursor-pointer select-none">
+                    I agree to the{' '}
+                    <button
+                      type="button"
+                      onClick={() => onOpenLegalModal?.('privacy')}
+                      className="text-brand-navy font-bold underline hover:text-brand-gold transition-colors"
+                    >
+                      Privacy Policy (POPIA)
+                    </button>{' '}
+                    and{' '}
+                    <button
+                      type="button"
+                      onClick={() => onOpenLegalModal?.('terms')}
+                      className="text-brand-navy font-bold underline hover:text-brand-gold transition-colors"
+                    >
+                      Terms & Conditions
+                    </button>{' '}
+                    for using the Masina Attorneys portal.
+                  </label>
+                </div>
+
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || !consentAccepted}
                   className="w-full bg-brand-navy hover:bg-slate-800 text-white font-bold text-xs py-3 rounded-xl border border-slate-800 shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer animate-duration-200"
                 >
                   {loading ? (
@@ -477,27 +516,6 @@ export default function SupabaseAuthCenter({
                 </button>
               </form>
             )}
-
-            {/* Quick-test accounts block */}
-            <div className="border-t border-slate-150 pt-5 space-y-3">
-              <span className="text-[10px] font-bold text-slate-400 uppercase font-mono tracking-wider block">Quick-Launch Tester Personas</span>
-              <p className="text-[11px] text-slate-500 mt-1">
-                Click any persona to load preset credentials instantly for rapid security check validation. (Pass: <code className="font-mono bg-slate-100 text-brand-navy px-1 py-0.5 rounded">masina123</code>)
-              </p>
-              
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto">
-                {allUsers.map((u) => (
-                  <button
-                    key={u.id}
-                    onClick={() => handleQuickLogin(u.email)}
-                    className="text-left bg-slate-50 hover:bg-slate-100 p-2.5 rounded-lg border border-slate-200/60 transition-colors cursor-pointer"
-                  >
-                    <span className="font-bold text-[11px] text-slate-700 block truncate">{u.name}</span>
-                    <span className="text-[9px] text-brand-gold-dark font-mono font-bold block uppercase mt-0.5 truncate">{u.role}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
         )}
       </div>
