@@ -32,12 +32,14 @@ function getGeminiClient(): GoogleGenAI | null {
   return aiClient;
 }
 
+const DEFAULT_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx4ZGVzY2RneGd6eGZhaGhicWZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2MTI5NDIsImV4cCI6MjEwMDE4ODk0Mn0.9sVplgTX9aXCNr2pGor3fdYfYdFuhgB45MDrBZjH0d0';
+
 // Lazy initialize Supabase client
 let supabaseClient: any = null;
 function getSupabaseClient() {
   if (!supabaseClient) {
     const supabaseUrl = process.env.SUPABASE_URL || 'https://lxdescdgxgzxfahhbqfy.supabase.co';
-    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY;
     if (supabaseKey && supabaseKey !== '' && supabaseKey !== 'undefined') {
       try {
         supabaseClient = createClient(supabaseUrl, supabaseKey);
@@ -1769,7 +1771,8 @@ AS WITNESSES:
 // Supabase Integration Routes
 app.get('/api/supabase/config', (req, res) => {
   const supabaseUrl = process.env.SUPABASE_URL || 'https://lxdescdgxgzxfahhbqfy.supabase.co';
-  const hasKey = !!process.env.SUPABASE_ANON_KEY && process.env.SUPABASE_ANON_KEY !== '';
+  const supabaseKey = process.env.SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY;
+  const hasKey = !!supabaseKey && supabaseKey !== '' && supabaseKey !== 'undefined';
   
   // Extract project ID from URL if possible
   let projectId = 'lxdescdgxgzxfahhbqfy';

@@ -104,7 +104,8 @@ export default function App() {
       } catch (e) {}
 
       // Initialize the active user profile context on startup
-      const targetUserId = userIdToAuth || currentUser?.id || (liveUsers[0]?.id || 'usr-admin-1');
+      const savedUserId = typeof window !== 'undefined' ? localStorage.getItem('masina_current_user_id') : null;
+      const targetUserId = userIdToAuth || savedUserId || currentUser?.id || (liveUsers[0]?.id || 'usr-admin-1');
       try {
         const loginData = await safeFetch<{ user: User }>('/api/auth/login', {
           method: 'POST',
@@ -113,11 +114,13 @@ export default function App() {
         });
         if (loginData?.user) {
           setCurrentUser(loginData.user);
+          try { localStorage.setItem('masina_current_user_id', loginData.user.id); } catch (e) {}
         }
       } catch (e) {
         if (liveUsers.length > 0) {
           const found = liveUsers.find(u => u.id === targetUserId) || liveUsers[0];
           setCurrentUser(found);
+          try { localStorage.setItem('masina_current_user_id', found.id); } catch (e) {}
         }
       }
 
@@ -141,6 +144,7 @@ export default function App() {
   // Triggered when switching role persona in Navbar dropdown
   const handleSwitchUser = async (userId: string) => {
     setLoading(true);
+    try { localStorage.setItem('masina_current_user_id', userId); } catch (e) {}
     await refreshAllContexts(userId);
     // Auto reset tab depending on role scope
     if (userId.startsWith('usr-client')) {
@@ -425,10 +429,12 @@ export default function App() {
           <SupabaseAuthCenter 
             currentUser={currentUser}
             onLoginSuccess={(user) => {
+              try { localStorage.setItem('masina_current_user_id', user.id); } catch (e) {}
               setCurrentUser(user);
               refreshAllContexts(user.id);
             }}
             onLogoutSuccess={() => {
+              try { localStorage.removeItem('masina_current_user_id'); } catch (e) {}
               setCurrentUser(null);
             }}
             allUsers={allUsers}
@@ -500,6 +506,7 @@ export default function App() {
           setIsLegalModalOpen(true);
         }}
         onLogout={async () => {
+          try { localStorage.removeItem('masina_current_user_id'); } catch (e) {}
           try {
             await fetch('/api/supabase/auth/logout', {
               method: 'POST',
@@ -591,10 +598,12 @@ export default function App() {
               <SupabaseAuthCenter 
                 currentUser={currentUser}
                 onLoginSuccess={(user) => {
+                  try { localStorage.setItem('masina_current_user_id', user.id); } catch (e) {}
                   setCurrentUser(user);
                   refreshAllContexts(user.id);
                 }}
                 onLogoutSuccess={() => {
+                  try { localStorage.removeItem('masina_current_user_id'); } catch (e) {}
                   setCurrentUser(null);
                 }}
                 allUsers={allUsers}
