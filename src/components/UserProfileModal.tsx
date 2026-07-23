@@ -80,7 +80,7 @@ export default function UserProfileModal({
           if (evt.target?.result) {
             const base64Data = evt.target.result as string;
 
-            // Upload directly to Supabase Storage file bucket
+            // Upload directly to Cloud Storage file bucket
             const res = await fetch('/api/storage/upload', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -98,7 +98,7 @@ export default function UserProfileModal({
               if (data.isFallback) {
                 setSuccessMessage('Photo processed and updated!');
               } else {
-                setSuccessMessage(`Saved in Supabase Storage bucket ('${data.bucket}')!`);
+                setSuccessMessage(`Saved in Cloud Storage ('${data.bucket}')!`);
               }
               setTimeout(() => setSuccessMessage(''), 4000);
             }
@@ -271,7 +271,7 @@ export default function UserProfileModal({
                   </label>
                   <span className="text-[10px] bg-emerald-100 text-emerald-800 font-mono px-2 py-0.5 rounded font-bold border border-emerald-200 flex items-center space-x-1">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span>SUPABASE BUCKET: ACTIVE</span>
+                    <span>CLOUD STORAGE: ACTIVE</span>
                   </span>
                 </div>
 
@@ -304,10 +304,10 @@ export default function UserProfileModal({
                       className="inline-flex items-center space-x-1.5 bg-brand-navy hover:bg-slate-800 disabled:opacity-50 text-white font-bold text-xs px-3.5 py-2 rounded-lg transition-colors cursor-pointer"
                     >
                       <Upload className="h-3.5 w-3.5 text-brand-gold" />
-                      <span>{isUploadingPic ? 'Uploading to Supabase Storage...' : 'Upload Custom Photo'}</span>
+                      <span>{isUploadingPic ? 'Uploading to Cloud Storage...' : 'Upload Custom Photo'}</span>
                     </button>
                     <p className="text-[10px] text-slate-500">
-                      Photos are stored in the <strong className="font-mono text-slate-700">mdocs</strong> Supabase Storage bucket. Replaces current avatar.
+                      Photos are stored in the <strong className="font-mono text-slate-700">mdocs</strong> Cloud Storage. Replaces current avatar.
                     </p>
                   </div>
                 </div>
@@ -577,7 +577,7 @@ export default function UserProfileModal({
                   <div className="space-y-1">
                     <h3 className="text-sm font-bold text-rose-900 font-serif">Permanently Delete User Account</h3>
                     <p className="text-xs text-rose-700 leading-relaxed">
-                      Warning: Deleting your account will permanently purge your user profile, registered credentials, and access permissions from both the local database and Supabase.
+                      Warning: Deleting your account will permanently purge your user profile, registered credentials, and access permissions from both the local database and the system.
                     </p>
                   </div>
                 </div>

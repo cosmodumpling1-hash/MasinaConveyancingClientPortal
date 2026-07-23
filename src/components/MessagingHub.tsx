@@ -47,7 +47,7 @@ export default function MessagingHub({ conversations, messages, currentUser, sel
               type: file.type || 'application/octet-stream'
             });
           } catch (err) {
-            console.error("Failed to upload attachment to Supabase storage:", err);
+            console.error("Failed to upload attachment to the system storage:", err);
             setSimulatedAttachment({
               name: file.name,
               url: base64Data,

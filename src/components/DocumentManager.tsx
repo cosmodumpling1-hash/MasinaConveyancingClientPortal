@@ -159,7 +159,7 @@ export default function DocumentManager({ documents, currentUser, matterId, onUp
         size: formattedFileSize
       });
 
-      setUploadSuccessMsg(`Successfully uploaded "${finalName}" to Supabase Storage bucket ('mdocs')!`);
+      setUploadSuccessMsg(`Successfully uploaded "${finalName}" to Cloud Storage ('mdocs')!`);
       setTimeout(() => setUploadSuccessMsg(''), 4000);
 
       // Reset state
@@ -170,7 +170,7 @@ export default function DocumentManager({ documents, currentUser, matterId, onUp
       if (fileInputRef.current) fileInputRef.current.value = '';
     } catch (err: any) {
       console.error("Document storage upload failed:", err);
-      alert("Failed to upload document to Supabase storage.");
+      alert("Failed to upload document to the system storage.");
     } finally {
       setIsUploading(false);
     }
@@ -354,12 +354,12 @@ export default function DocumentManager({ documents, currentUser, matterId, onUp
               {isUploading ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-2 border-slate-950 border-t-transparent" />
-                  <span>Uploading to Supabase Storage...</span>
+                  <span>Uploading to Cloud Storage...</span>
                 </>
               ) : (
                 <>
                   <Upload className="h-4 w-4 text-slate-950" />
-                  <span>Upload Document to Supabase Storage</span>
+                  <span>Upload Document to Cloud Storage</span>
                 </>
               )}
             </button>

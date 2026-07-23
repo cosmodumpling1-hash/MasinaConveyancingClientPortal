@@ -4,7 +4,6 @@ import fs from 'fs';
 import os from 'os';
 import { GoogleGenAI } from '@google/genai';
 import dotenv from 'dotenv';
-import { createClient } from '@supabase/supabase-js';
 
 dotenv.config();
 
@@ -49,25 +48,6 @@ function getGeminiClient(): GoogleGenAI | null {
     }
   }
   return aiClient;
-}
-
-const DEFAULT_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx4ZGVzY2RneGd6eGZhaGhicWZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2MTI5NDIsImV4cCI6MjEwMDE4ODk0Mn0.9sVplgTX9aXCNr2pGor3fdYfYdFuhgB45MDrBZjH0d0';
-
-// Lazy initialize Supabase client
-let supabaseClient: any = null;
-function getSupabaseClient() {
-  if (!supabaseClient) {
-    const supabaseUrl = process.env.SUPABASE_URL || 'https://lxdescdgxgzxfahhbqfy.supabase.co';
-    const supabaseKey = process.env.SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY;
-    if (supabaseKey && supabaseKey !== '' && supabaseKey !== 'undefined') {
-      try {
-        supabaseClient = createClient(supabaseUrl, supabaseKey);
-      } catch (err) {
-        console.error("Failed to initialize Supabase client:", err);
-      }
-    }
-  }
-  return supabaseClient;
 }
 
 // Simple file-based database for persistence
@@ -562,32 +542,9 @@ function saveData(data: any) {
   }
 }
 
-// --- Dynamic Supabase DB Integration Helpers ---
+// --- Local Database Helpers ---
 
 async function getUsersFromDb() {
-  const supabase = getSupabaseClient();
-  if (supabase) {
-    try {
-      const { data, error } = await supabase.from('users').select('*');
-      if (!error && data) {
-        if (data.length > 0) {
-          return data;
-        } else {
-          // Table exists but is empty. Seed it.
-          const localData = loadData().users;
-          if (localData && localData.length > 0) {
-            console.log("Auto-seeding empty Supabase 'users' table...");
-            await supabase.from('users').upsert(localData);
-          }
-          return localData;
-        }
-      } else if (error) {
-        console.warn("Supabase getUsers query notice (using fallback):", error.message);
-      }
-    } catch (e) {
-      console.warn("Supabase getUsers notice (using fallback):", e);
-    }
-  }
   return loadData().users;
 }
 
@@ -596,69 +553,19 @@ async function saveUserToDb(user: any) {
   const idx = db.users.findIndex((u: any) => u.id === user.id || u.email === user.email);
   if (idx !== -1) {
     db.users[idx] = { ...db.users[idx], ...user };
-    user = db.users[idx];
   } else {
     db.users.push(user);
   }
   saveData(db);
-
-  const supabase = getSupabaseClient();
-  if (supabase) {
-    try {
-      await supabase.from('users').upsert(user);
-    } catch (e) {
-      console.error("Supabase saveUser error:", e);
-    }
-  }
 }
 
 async function deleteUserFromDb(userId: string) {
   const db = loadData();
   db.users = db.users.filter((u: any) => u.id !== userId);
   saveData(db);
-
-  const supabase = getSupabaseClient();
-  if (supabase) {
-    try {
-      await supabase.from('users').delete().eq('id', userId);
-    } catch (e) {
-      console.error("Supabase deleteUser error:", e);
-    }
-  }
 }
 
 async function getMattersFromDb() {
-  const supabase = getSupabaseClient();
-  if (supabase) {
-    try {
-      const { data, error } = await supabase.from('matters').select('*');
-      if (!error && data) {
-        if (data.length > 0) {
-          return data.map((item: any) => ({
-            ...item,
-            stages: typeof item.stages === 'string' ? JSON.parse(item.stages) : (item.stages || []),
-            activities: typeof item.activities === 'string' ? JSON.parse(item.activities) : (item.activities || [])
-          }));
-        } else {
-          const localData = loadData().matters;
-          if (localData && localData.length > 0) {
-            console.log("Auto-seeding empty Supabase 'matters' table...");
-            const payload = localData.map((m: any) => ({
-              ...m,
-              stages: typeof m.stages === 'object' ? JSON.stringify(m.stages) : m.stages,
-              activities: typeof m.activities === 'object' ? JSON.stringify(m.activities) : m.activities
-            }));
-            await supabase.from('matters').upsert(payload);
-          }
-          return localData;
-        }
-      } else if (error) {
-        console.warn("Supabase getMatters query notice (using fallback):", error.message);
-      }
-    } catch (e) {
-      console.warn("Supabase getMatters notice (using fallback):", e);
-    }
-  }
   return loadData().matters;
 }
 
@@ -671,45 +578,9 @@ async function saveMatterToDb(matter: any) {
     db.matters.push(matter);
   }
   saveData(db);
-
-  const supabase = getSupabaseClient();
-  if (supabase) {
-    try {
-      const payload = {
-        ...matter,
-        stages: typeof matter.stages === 'object' ? JSON.stringify(matter.stages) : matter.stages,
-        activities: typeof matter.activities === 'object' ? JSON.stringify(matter.activities) : matter.activities
-      };
-      await supabase.from('matters').upsert(payload);
-    } catch (e) {
-      console.error("Supabase saveMatter error:", e);
-    }
-  }
 }
 
 async function getDocumentsFromDb() {
-  const supabase = getSupabaseClient();
-  if (supabase) {
-    try {
-      const { data, error } = await supabase.from('documents').select('*');
-      if (!error && data) {
-        if (data.length > 0) {
-          return data;
-        } else {
-          const localData = loadData().documents;
-          if (localData && localData.length > 0) {
-            console.log("Auto-seeding empty Supabase 'documents' table...");
-            await supabase.from('documents').upsert(localData);
-          }
-          return localData;
-        }
-      } else if (error) {
-        console.warn("Supabase getDocuments query notice (using fallback):", error.message);
-      }
-    } catch (e) {
-      console.warn("Supabase getDocuments notice (using fallback):", e);
-    }
-  }
   return loadData().documents;
 }
 
@@ -722,40 +593,9 @@ async function saveDocumentToDb(document: any) {
     db.documents.push(document);
   }
   saveData(db);
-
-  const supabase = getSupabaseClient();
-  if (supabase) {
-    try {
-      await supabase.from('documents').upsert(document);
-    } catch (e) {
-      console.error("Supabase saveDocument error:", e);
-    }
-  }
 }
 
 async function getTasksFromDb() {
-  const supabase = getSupabaseClient();
-  if (supabase) {
-    try {
-      const { data, error } = await supabase.from('tasks').select('*');
-      if (!error && data) {
-        if (data.length > 0) {
-          return data;
-        } else {
-          const localData = loadData().tasks;
-          if (localData && localData.length > 0) {
-            console.log("Auto-seeding empty Supabase 'tasks' table...");
-            await supabase.from('tasks').upsert(localData);
-          }
-          return localData;
-        }
-      } else if (error) {
-        console.warn("Supabase getTasks query notice (using fallback):", error.message);
-      }
-    } catch (e) {
-      console.warn("Supabase getTasks notice (using fallback):", e);
-    }
-  }
   return loadData().tasks;
 }
 
@@ -768,47 +608,9 @@ async function saveTaskToDb(task: any) {
     db.tasks.unshift(task);
   }
   saveData(db);
-
-  const supabase = getSupabaseClient();
-  if (supabase) {
-    try {
-      await supabase.from('tasks').upsert(task);
-    } catch (e) {
-      console.error("Supabase saveTask error:", e);
-    }
-  }
 }
 
 async function getConversationsFromDb() {
-  const supabase = getSupabaseClient();
-  if (supabase) {
-    try {
-      const { data, error } = await supabase.from('conversations').select('*');
-      if (!error && data) {
-        if (data.length > 0) {
-          return data.map((item: any) => ({
-            ...item,
-            participants: typeof item.participants === 'string' ? JSON.parse(item.participants) : (item.participants || [])
-          }));
-        } else {
-          const localData = loadData().conversations;
-          if (localData && localData.length > 0) {
-            console.log("Auto-seeding empty Supabase 'conversations' table...");
-            const payload = localData.map((c: any) => ({
-              ...c,
-              participants: typeof c.participants === 'object' ? JSON.stringify(c.participants) : c.participants
-            }));
-            await supabase.from('conversations').upsert(payload);
-          }
-          return localData;
-        }
-      } else if (error) {
-        console.warn("Supabase getConversations query notice (using fallback):", error.message);
-      }
-    } catch (e) {
-      console.warn("Supabase getConversations notice (using fallback):", e);
-    }
-  }
   return loadData().conversations;
 }
 
@@ -821,44 +623,9 @@ async function saveConversationToDb(conversation: any) {
     db.conversations.push(conversation);
   }
   saveData(db);
-
-  const supabase = getSupabaseClient();
-  if (supabase) {
-    try {
-      const payload = {
-        ...conversation,
-        participants: typeof conversation.participants === 'object' ? JSON.stringify(conversation.participants) : conversation.participants
-      };
-      await supabase.from('conversations').upsert(payload);
-    } catch (e) {
-      console.error("Supabase saveConversation error:", e);
-    }
-  }
 }
 
 async function getMessagesFromDb() {
-  const supabase = getSupabaseClient();
-  if (supabase) {
-    try {
-      const { data, error } = await supabase.from('messages').select('*');
-      if (!error && data) {
-        if (data.length > 0) {
-          return data;
-        } else {
-          const localData = loadData().messages;
-          if (localData && localData.length > 0) {
-            console.log("Auto-seeding empty Supabase 'messages' table...");
-            await supabase.from('messages').upsert(localData);
-          }
-          return localData;
-        }
-      } else if (error) {
-        console.warn("Supabase getMessages query notice (using fallback):", error.message);
-      }
-    } catch (e) {
-      console.warn("Supabase getMessages notice (using fallback):", e);
-    }
-  }
   return loadData().messages;
 }
 
@@ -866,40 +633,9 @@ async function saveMessageToDb(message: any) {
   const db = loadData();
   db.messages.push(message);
   saveData(db);
-
-  const supabase = getSupabaseClient();
-  if (supabase) {
-    try {
-      await supabase.from('messages').upsert(message);
-    } catch (e) {
-      console.error("Supabase saveMessage error:", e);
-    }
-  }
 }
 
 async function getAppointmentsFromDb() {
-  const supabase = getSupabaseClient();
-  if (supabase) {
-    try {
-      const { data, error } = await supabase.from('appointments').select('*');
-      if (!error && data) {
-        if (data.length > 0) {
-          return data;
-        } else {
-          const localData = loadData().appointments;
-          if (localData && localData.length > 0) {
-            console.log("Auto-seeding empty Supabase 'appointments' table...");
-            await supabase.from('appointments').upsert(localData);
-          }
-          return localData;
-        }
-      } else if (error) {
-        console.warn("Supabase getAppointments query notice (using fallback):", error.message);
-      }
-    } catch (e) {
-      console.warn("Supabase getAppointments notice (using fallback):", e);
-    }
-  }
   return loadData().appointments;
 }
 
@@ -912,40 +648,9 @@ async function saveAppointmentToDb(appointment: any) {
     db.appointments.unshift(appointment);
   }
   saveData(db);
-
-  const supabase = getSupabaseClient();
-  if (supabase) {
-    try {
-      await supabase.from('appointments').upsert(appointment);
-    } catch (e) {
-      console.error("Supabase saveAppointment error:", e);
-    }
-  }
 }
 
 async function getAutomationRulesFromDb() {
-  const supabase = getSupabaseClient();
-  if (supabase) {
-    try {
-      const { data, error } = await supabase.from('automationRules').select('*');
-      if (!error && data) {
-        if (data.length > 0) {
-          return data;
-        } else {
-          const localData = loadData().automationRules || [];
-          if (localData && localData.length > 0) {
-            console.log("Auto-seeding empty Supabase 'automationRules' table...");
-            await supabase.from('automationRules').upsert(localData);
-          }
-          return localData;
-        }
-      } else if (error) {
-        console.warn("Supabase getAutomationRules query notice (using fallback):", error.message);
-      }
-    } catch (e) {
-      console.warn("Supabase getAutomationRules notice (using fallback):", e);
-    }
-  }
   return loadData().automationRules || [];
 }
 
@@ -958,40 +663,9 @@ async function saveAutomationRuleToDb(rule: any) {
     db.automationRules.push(rule);
   }
   saveData(db);
-
-  const supabase = getSupabaseClient();
-  if (supabase) {
-    try {
-      await supabase.from('automationRules').upsert(rule);
-    } catch (e) {
-      console.error("Supabase saveAutomationRule error:", e);
-    }
-  }
 }
 
 async function getAutomationLogsFromDb() {
-  const supabase = getSupabaseClient();
-  if (supabase) {
-    try {
-      const { data, error } = await supabase.from('automationLogs').select('*');
-      if (!error && data) {
-        if (data.length > 0) {
-          return data;
-        } else {
-          const localData = loadData().automationLogs || [];
-          if (localData && localData.length > 0) {
-            console.log("Auto-seeding empty Supabase 'automationLogs' table...");
-            await supabase.from('automationLogs').upsert(localData);
-          }
-          return localData;
-        }
-      } else if (error) {
-        console.warn("Supabase getAutomationLogs query notice (using fallback):", error.message);
-      }
-    } catch (e) {
-      console.warn("Supabase getAutomationLogs notice (using fallback):", e);
-    }
-  }
   return loadData().automationLogs || [];
 }
 
@@ -999,40 +673,9 @@ async function saveAutomationLogToDb(log: any) {
   const db = loadData();
   db.automationLogs.unshift(log);
   saveData(db);
-
-  const supabase = getSupabaseClient();
-  if (supabase) {
-    try {
-      await supabase.from('automationLogs').upsert(log);
-    } catch (e) {
-      console.error("Supabase saveAutomationLog error:", e);
-    }
-  }
 }
 
 async function getAuditLogsFromDb() {
-  const supabase = getSupabaseClient();
-  if (supabase) {
-    try {
-      const { data, error } = await supabase.from('auditLogs').select('*');
-      if (!error && data) {
-        if (data.length > 0) {
-          return data;
-        } else {
-          const localData = loadData().auditLogs || [];
-          if (localData && localData.length > 0) {
-            console.log("Auto-seeding empty Supabase 'auditLogs' table...");
-            await supabase.from('auditLogs').upsert(localData);
-          }
-          return localData;
-        }
-      } else if (error) {
-        console.warn("Supabase getAuditLogs query notice (using fallback):", error.message);
-      }
-    } catch (e) {
-      console.warn("Supabase getAuditLogs notice (using fallback):", e);
-    }
-  }
   return loadData().auditLogs || [];
 }
 
@@ -1040,15 +683,6 @@ async function saveAuditLogToDb(log: any) {
   const db = loadData();
   db.auditLogs.unshift(log);
   saveData(db);
-
-  const supabase = getSupabaseClient();
-  if (supabase) {
-    try {
-      await supabase.from('auditLogs').upsert(log);
-    } catch (e) {
-      console.error("Supabase saveAuditLog error:", e);
-    }
-  }
 }
 
 // Log actions to the security audit trail
@@ -1126,7 +760,7 @@ app.put('/api/users/:id', async (req, res) => {
   if (address !== undefined) user.address = address;
   if (avatarUrl !== undefined) {
     if (typeof avatarUrl === 'string' && avatarUrl.startsWith('data:image/')) {
-      const uploadRes = await uploadToSupabaseStorage(avatarUrl, `profile-${user.id}.png`, 'mdocs', 'profile-pictures');
+      const uploadRes = await uploadToCloudStorage(avatarUrl, `profile-${user.id}.png`, 'mdocs', 'profile-pictures');
       user.avatarUrl = uploadRes.url;
     } else {
       user.avatarUrl = avatarUrl;
@@ -1190,15 +824,7 @@ app.post('/api/users/:id/role', async (req, res) => {
 
   await saveUserToDb(user);
 
-  // Update in Supabase if connected
-  const supabase = getSupabaseClient();
-  if (supabase) {
-    try {
-      await supabase.from('users').update({ role }).eq('id', user.id);
-    } catch (e) {
-      console.error("Supabase role update notice:", e);
-    }
-  }
+  
 
   const adminUser = users.find((u: any) => u.id === adminUserId) || { name: 'System Administrator' };
   await logAudit(
@@ -1423,7 +1049,7 @@ app.post('/api/documents', async (req, res) => {
   
   let finalFileUrl = fileUrl || '#';
   if (typeof fileUrl === 'string' && fileUrl.startsWith('data:')) {
-    const uploadRes = await uploadToSupabaseStorage(fileUrl, name || 'document.pdf', 'mdocs', category || 'fica');
+    const uploadRes = await uploadToCloudStorage(fileUrl, name || 'document.pdf', 'mdocs', category || 'fica');
     finalFileUrl = uploadRes.url;
   }
 
@@ -1814,120 +1440,19 @@ AS WITNESSES:
   }
 });
 
-// Supabase Storage File Buckets Helpers
-async function ensureSupabaseBucket(bucketName: string = 'masina-files') {
-  const supabase = getSupabaseClient();
-  if (!supabase) return { ready: false, message: 'Supabase client unavailable' };
-  try {
-    const { data: buckets, error: listError } = await supabase.storage.listBuckets();
-    if (!listError && Array.isArray(buckets)) {
-      const exists = buckets.some((b: any) => b.name === bucketName || b.id === bucketName);
-      if (exists) {
-        return { ready: true, bucketName, exists: true };
-      }
-    }
-    
-    // Attempt to create public storage bucket
-    const { data, error } = await supabase.storage.createBucket(bucketName, {
-      public: true,
-      fileSizeLimit: 52428800, // 50MB
-    });
+// Cloud Storage File Buckets Helpers
+async function ensureCloudBucket() { return { ready: true }; }
 
-    if (error) {
-      console.log(`Supabase storage bucket info for '${bucketName}': ${error.message}`);
-    }
-    return { ready: true, bucketName, created: !error };
-  } catch (err: any) {
-    console.log(`Supabase bucket status check (${bucketName}):`, err?.message || err);
-    return { ready: false, message: err?.message || String(err) };
-  }
-}
 
-async function uploadToSupabaseStorage(
+
+async function uploadToCloudStorage(
   fileDataStr: string,
   fileName: string,
   bucketName: string = 'mdocs',
   folder: string = 'uploads'
 ) {
-  const supabase = getSupabaseClient();
-  if (!supabase) {
-    return {
-      success: true,
-      url: fileDataStr,
-      isFallback: true,
-      reason: 'Supabase client unconfigured'
-    };
-  }
-
-  try {
-    // 1. Ensure target storage bucket exists or attempt auto-creation
-    await ensureSupabaseBucket(bucketName);
-
-    // 2. Parse Base64 buffer & MIME type
-    let buffer: Buffer;
-    let mimeType = 'application/octet-stream';
-
-    if (fileDataStr.startsWith('data:')) {
-      const matches = fileDataStr.match(/^data:([a-zA-Z0-9\/\+\-\.]+);base64,(.+)$/);
-      if (matches && matches.length === 3) {
-        mimeType = matches[1];
-        buffer = Buffer.from(matches[2], 'base64');
-      } else {
-        const parts = fileDataStr.split(',');
-        buffer = Buffer.from(parts[1] || parts[0], 'base64');
-      }
-    } else {
-      buffer = Buffer.from(fileDataStr, 'utf8');
-    }
-
-    // Sanitize file name
-    const cleanName = (fileName || 'file').replace(/[^a-zA-Z0-9\.\_\-]/g, '_');
-    const filePath = `${folder}/${Date.now()}-${cleanName}`;
-
-    // 3. Upload file buffer to Supabase Storage bucket
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from(bucketName)
-      .upload(filePath, buffer, {
-        contentType: mimeType,
-        upsert: true
-      });
-
-    if (uploadError) {
-      console.log(`Supabase storage bucket '${bucketName}' upload status: ${uploadError.message}. Using safe application local fallback.`);
-      
-      return {
-        success: true,
-        url: fileDataStr,
-        bucket: bucketName,
-        isFallback: true,
-        reason: uploadError.message
-      };
-    }
-
-    // 4. Retrieve Public URL
-    const { data: publicUrlData } = supabase.storage.from(bucketName).getPublicUrl(filePath);
-    const publicUrl = publicUrlData?.publicUrl || '';
-
-    return {
-      success: true,
-      url: publicUrl || fileDataStr,
-      bucket: bucketName,
-      path: filePath,
-      size: buffer.length,
-      mimeType,
-      isFallback: false
-    };
-  } catch (err: any) {
-    console.log("Storage upload notice:", err?.message || err);
-    return {
-      success: true,
-      url: fileDataStr,
-      isFallback: true,
-      reason: err?.message || String(err)
-    };
-  }
+  return { success: true, url: fileDataStr, isFallback: true };
 }
-
 // Storage API Routes
 app.post('/api/storage/upload', async (req, res) => {
   const { fileName, fileData, bucketName, folder } = req.body;
@@ -1940,629 +1465,11 @@ app.post('/api/storage/upload', async (req, res) => {
   const targetFolder = folder || 'uploads';
   const nameToUse = fileName || `file-${Date.now()}.png`;
 
-  const result = await uploadToSupabaseStorage(fileData, nameToUse, targetBucket, targetFolder);
+  const result = await uploadToCloudStorage(fileData, nameToUse, targetBucket, targetFolder);
   return res.json(result);
 });
 
-app.get('/api/supabase/buckets', async (req, res) => {
-  const supabase = getSupabaseClient();
-  const defaultBuckets = ['mdocs', 'avatars', 'documents', 'attachments', 'masina-files'];
-  
-  if (!supabase) {
-    return res.json({
-      configured: false,
-      buckets: defaultBuckets.map(b => ({ name: b, status: 'unconfigured' }))
-    });
-  }
 
-  const bucketStatuses = [];
-  for (const b of defaultBuckets) {
-    const status = await ensureSupabaseBucket(b);
-    bucketStatuses.push({
-      name: b,
-      status: status.ready ? 'ready' : 'error',
-      details: status
-    });
-  }
-
-  return res.json({
-    configured: true,
-    buckets: bucketStatuses
-  });
-});
-
-// Supabase Integration Routes
-app.get('/api/supabase/config', (req, res) => {
-  const supabaseUrl = process.env.SUPABASE_URL || 'https://lxdescdgxgzxfahhbqfy.supabase.co';
-  const supabaseKey = process.env.SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY;
-  const hasKey = !!supabaseKey && supabaseKey !== '' && supabaseKey !== 'undefined';
-  
-  // Extract project ID from URL if possible
-  let projectId = 'lxdescdgxgzxfahhbqfy';
-  try {
-    const urlObj = new URL(supabaseUrl);
-    const hostParts = urlObj.hostname.split('.');
-    if (hostParts.length > 0) {
-      projectId = hostParts[0];
-    }
-  } catch (e) {}
-
-  res.json({
-    url: supabaseUrl,
-    projectId,
-    hasKey
-  });
-});
-
-app.get('/api/supabase/status', async (req, res) => {
-  const supabase = getSupabaseClient();
-  if (!supabase) {
-    return res.json({
-      configured: false,
-      connected: false,
-      message: 'Supabase credentials missing. Add SUPABASE_ANON_KEY in Settings/secrets to connect.'
-    });
-  }
-
-  try {
-    // Try to run a lightweight select on the 'users' table
-    const { data, error } = await supabase
-      .from('users')
-      .select('id')
-      .limit(1);
-
-    if (error) {
-      // Check if it is a missing relation error (relation "users" does not exist)
-      const isTableMissing = error.message && (error.message.includes('relation') || error.message.includes('does not exist'));
-      return res.json({
-        configured: true,
-        connected: false,
-        isTableMissing,
-        error: error.message,
-        code: error.code,
-        message: isTableMissing 
-          ? 'Connected to Supabase, but required tables are missing. Please initialize tables using the SQL editor DDL schema below.'
-          : `Supabase query failed: ${error.message}`
-      });
-    }
-
-    res.json({
-      configured: true,
-      connected: true,
-      message: 'Successfully connected and authenticated with Supabase!'
-    });
-  } catch (err: any) {
-    res.json({
-      configured: true,
-      connected: false,
-      message: `Failed to connect to Supabase: ${err.message || err}`
-    });
-  }
-});
-
-app.get('/api/supabase/sql-schema', (req, res) => {
-  const schema = `-- SQL DDL setup script for Masina Conveyancing Matter Management
--- Copy and paste this script into your Supabase SQL Editor (Dashboard -> SQL Editor -> Run)
-
--- 1. Users Table
-CREATE TABLE IF NOT EXISTS users (
-  id TEXT PRIMARY KEY,
-  name TEXT NOT NULL,
-  email TEXT,
-  role TEXT,
-  phone TEXT,
-  "kycStatus" TEXT,
-  "idNumber" TEXT,
-  address TEXT,
-  "consentAccepted" BOOLEAN,
-  "consentDate" TEXT,
-  "avatarUrl" TEXT
-);
-ALTER TABLE users DISABLE ROW LEVEL SECURITY;
-
--- 2. Matters Table
-CREATE TABLE IF NOT EXISTS matters (
-  id TEXT PRIMARY KEY,
-  "matterNumber" TEXT,
-  "propertyAddress" TEXT,
-  "propertyPrice" NUMERIC,
-  "buyerId" TEXT,
-  "buyerName" TEXT,
-  "sellerId" TEXT,
-  "sellerName" TEXT,
-  "assignedAttorneyId" TEXT,
-  "assignedAttorneyName" TEXT,
-  "assignedParalegalId" TEXT,
-  "assignedParalegalName" TEXT,
-  "currentStage" INTEGER,
-  "expectedCompletionDate" TEXT,
-  status TEXT,
-  stages JSONB,
-  activities JSONB
-);
-ALTER TABLE matters DISABLE ROW LEVEL SECURITY;
-
--- 3. Documents Table
-CREATE TABLE IF NOT EXISTS documents (
-  id TEXT PRIMARY KEY,
-  "matterId" TEXT,
-  name TEXT NOT NULL,
-  category TEXT,
-  "fileUrl" TEXT,
-  "uploadDate" TEXT,
-  status TEXT,
-  version INTEGER,
-  size TEXT,
-  "uploadedBy" TEXT
-);
-ALTER TABLE documents DISABLE ROW LEVEL SECURITY;
-
--- 4. Tasks Table
-CREATE TABLE IF NOT EXISTS tasks (
-  id TEXT PRIMARY KEY,
-  "matterId" TEXT,
-  "matterNumber" TEXT,
-  "propertyAddress" TEXT,
-  title TEXT NOT NULL,
-  description TEXT,
-  "assignedToId" TEXT,
-  "assignedToName" TEXT,
-  "assignedToRole" TEXT,
-  "dueDate" TEXT,
-  status TEXT,
-  "requiresDocumentCategory" TEXT
-);
-ALTER TABLE tasks DISABLE ROW LEVEL SECURITY;
-
--- 5. Conversations Table
-CREATE TABLE IF NOT EXISTS conversations (
-  id TEXT PRIMARY KEY,
-  "matterId" TEXT,
-  "matterNumber" TEXT,
-  "propertyAddress" TEXT,
-  title TEXT,
-  participants JSONB,
-  "lastMessageText" TEXT,
-  "lastMessageTimestamp" TEXT
-);
-ALTER TABLE conversations ADD COLUMN IF NOT EXISTS participants JSONB;
-ALTER TABLE conversations DISABLE ROW LEVEL SECURITY;
-
--- 6. Messages Table
-CREATE TABLE IF NOT EXISTS messages (
-  id TEXT PRIMARY KEY,
-  "conversationId" TEXT,
-  "senderId" TEXT,
-  "senderName" TEXT,
-  "senderRole" TEXT,
-  text TEXT,
-  timestamp TEXT,
-  "isRead" BOOLEAN
-);
-ALTER TABLE messages DISABLE ROW LEVEL SECURITY;
-
--- 7. Appointments Table
-CREATE TABLE IF NOT EXISTS appointments (
-  id TEXT PRIMARY KEY,
-  "clientId" TEXT,
-  "clientName" TEXT,
-  "staffId" TEXT,
-  "staffName" TEXT,
-  "staffRole" TEXT,
-  date TEXT,
-  time TEXT,
-  duration INTEGER,
-  type TEXT,
-  status TEXT,
-  "videoLink" TEXT,
-  description TEXT
-);
-ALTER TABLE appointments DISABLE ROW LEVEL SECURITY;
-
--- 8. Automation Rules Table
-CREATE TABLE IF NOT EXISTS "automationRules" (
-  id TEXT PRIMARY KEY,
-  name TEXT,
-  trigger TEXT,
-  "actionType" TEXT,
-  template TEXT,
-  enabled BOOLEAN
-);
-ALTER TABLE "automationRules" DISABLE ROW LEVEL SECURITY;
-
--- 9. Automation Logs Table
-CREATE TABLE IF NOT EXISTS "automationLogs" (
-  id TEXT PRIMARY KEY,
-  timestamp TEXT,
-  "matterId" TEXT,
-  "matterNumber" TEXT,
-  "triggerName" TEXT,
-  recipient TEXT,
-  type TEXT,
-  content TEXT,
-  status TEXT
-);
-ALTER TABLE "automationLogs" DISABLE ROW LEVEL SECURITY;
-
--- 10. Audit Logs Table
-CREATE TABLE IF NOT EXISTS "auditLogs" (
-  id TEXT PRIMARY KEY,
-  timestamp TEXT,
-  "userId" TEXT,
-  "userName" TEXT,
-  "userRole" TEXT,
-  action TEXT,
-  details TEXT,
-  "ipAddress" TEXT
-);
-ALTER TABLE "auditLogs" DISABLE ROW LEVEL SECURITY;
-
--- 11. Storage Buckets Setup (Avatars, Documents, Attachments, Files)
-INSERT INTO storage.buckets (id, name, public) 
-VALUES 
-  ('mdocs', 'mdocs', true),
-  ('avatars', 'avatars', true),
-  ('documents', 'documents', true),
-  ('attachments', 'attachments', true),
-  ('masina-files', 'masina-files', true)
-ON CONFLICT (id) DO UPDATE SET public = true;
-
--- Grant public read and upload permissions for storage buckets
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Public Bucket Select') THEN
-    CREATE POLICY "Public Bucket Select" ON storage.objects FOR SELECT USING (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Public Bucket Upload') THEN
-    CREATE POLICY "Public Bucket Upload" ON storage.objects FOR INSERT WITH CHECK (true);
-  END IF;
-END $$;`;
-  res.json({ sql: schema });
-});
-
-app.post('/api/supabase/sync', async (req, res) => {
-  const supabase = getSupabaseClient();
-  if (!supabase) {
-    return res.status(400).json({ error: 'Supabase is not configured yet. Add credentials in secrets.' });
-  }
-
-  const db = loadData();
-  const report: Record<string, { total: number; synced: number; error?: string }> = {};
-
-  const tablesMap: Record<string, keyof typeof db> = {
-    'users': 'users',
-    'matters': 'matters',
-    'documents': 'documents',
-    'tasks': 'tasks',
-    'conversations': 'conversations',
-    'messages': 'messages',
-    'appointments': 'appointments',
-    'automationRules': 'automationRules',
-    'automationLogs': 'automationLogs',
-    'auditLogs': 'auditLogs'
-  };
-
-  for (const [tableName, dbKey] of Object.entries(tablesMap)) {
-    const rows = db[dbKey] || [];
-    report[tableName] = { total: rows.length, synced: 0 };
-    
-    if (rows.length === 0) continue;
-
-    try {
-      const payload = rows.map((r: any) => {
-        if (tableName === 'matters') {
-          return {
-            ...r,
-            stages: typeof r.stages === 'object' ? JSON.stringify(r.stages) : r.stages,
-            activities: typeof r.activities === 'object' ? JSON.stringify(r.activities) : r.activities
-          };
-        }
-        if (tableName === 'conversations') {
-          return {
-            ...r,
-            participants: typeof r.participants === 'object' ? JSON.stringify(r.participants) : r.participants
-          };
-        }
-        return r;
-      });
-
-      // Upsert rows into Supabase
-      const { error } = await supabase
-        .from(tableName)
-        .upsert(payload);
-
-      if (error) {
-        report[tableName].error = error.message;
-      } else {
-        report[tableName].synced = rows.length;
-      }
-    } catch (err: any) {
-      report[tableName].error = err.message || err.toString();
-    }
-  }
-
-  const failedTables = Object.entries(report)
-    .filter(([_, info]) => info.error)
-    .map(([name, info]) => `${name} (${info.error})`);
-
-  if (failedTables.length > 0) {
-    res.json({
-      success: false,
-      message: `Synchronized some tables, but encountered policy or schema errors on: ${failedTables.join(', ')}. If error mentions row-level security, please execute the SQL script in Supabase SQL Editor.`,
-      report
-    });
-  } else {
-    res.json({
-      success: true,
-      message: 'All 10 tables & demo records successfully synchronized with your live Supabase PostgreSQL database!',
-      report
-    });
-  }
-});
-
-// Endpoint to clear / reset all local data back to baseline INITIAL_DATA
-app.post('/api/admin/clear-local-data', (req, res) => {
-  try {
-    saveData(INITIAL_DATA);
-    res.json({
-      success: true,
-      message: 'All local database storage has been cleared and reset to pristine baseline state.',
-      data: INITIAL_DATA
-    });
-  } catch (err: any) {
-    res.status(500).json({
-      success: false,
-      error: 'Failed to reset local database: ' + (err.message || err.toString())
-    });
-  }
-});
-
-// Supabase Authentication Endpoints
-app.post('/api/supabase/auth/signup', async (req, res) => {
-  const { email, password, name, role, phone, idNumber, address } = req.body;
-  
-  if (!email || !password || !name || !role) {
-    return res.status(400).json({ error: 'Required fields: email, password, name, role.' });
-  }
-
-  // Enforce staff role allocation: self-registrations can only pick buyer, seller, or other.
-  // Staff roles (attorney, conveyancer, paralegal, admin) must be allocated post-registration by a System Administrator.
-  const allowedSelfRoles = ['buyer', 'seller', 'other'];
-  const finalRole = allowedSelfRoles.includes(role) ? role : 'other';
-
-  const supabase = getSupabaseClient();
-  const db = loadData();
-
-  if (supabase) {
-    try {
-      // 1. Sign up user in Supabase auth
-      const { data, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name,
-            role: finalRole,
-            phone,
-          }
-        }
-      });
-
-      if (signUpError) {
-        return res.status(400).json({ error: signUpError.message });
-      }
-
-      if (!data.user) {
-        return res.status(500).json({ error: 'No user data returned from Supabase Auth.' });
-      }
-
-      const uid = data.user.id;
-
-      // 2. Insert user into Supabase users table
-      const newUser = {
-        id: uid,
-        name,
-        email,
-        role: finalRole,
-        phone: phone || '',
-        kycStatus: 'pending',
-        idNumber: idNumber || '',
-        address: address || '',
-        consentAccepted: true,
-        consentDate: new Date().toISOString(),
-        avatarUrl: `https://images.unsplash.com/photo-${finalRole === 'buyer' ? '1500648767791-00dcc994a43e' : '1494790108377-be9c29b29330'}?w=150`
-      };
-
-      const { error: insertError } = await supabase
-        .from('users')
-        .upsert(newUser);
-
-      // 3. Add to local json db as well
-      const userIndex = db.users.findIndex((u: any) => u.email === email || u.id === uid);
-      if (userIndex !== -1) {
-        db.users[userIndex] = newUser;
-      } else {
-        db.users.push(newUser);
-      }
-      saveData(db);
-
-      logAudit(uid, 'USER_REGISTER_SUPABASE', `Successfully signed up and authenticated real Supabase account: ${email}`, req);
-
-      return res.json({
-        success: true,
-        user: newUser,
-        session: data.session,
-        message: 'Successfully registered on Supabase cloud and synced details.'
-      });
-
-    } catch (err: any) {
-      console.error("Supabase Auth sign up error:", err);
-      return res.status(500).json({ error: err.message || 'Supabase authentication failed.' });
-    }
-  } else {
-    // Simulated Fallback Mode
-    const simulatedId = `usr-supabase-${Date.now()}`;
-    const newUser = {
-      id: simulatedId,
-      name,
-      email,
-      role,
-      phone: phone || '',
-      kycStatus: 'pending',
-      idNumber: idNumber || '',
-      address: address || '',
-      consentAccepted: true,
-      consentDate: new Date().toISOString(),
-      avatarUrl: `https://images.unsplash.com/photo-${role === 'buyer' ? '1500648767791-00dcc994a43e' : '1494790108377-be9c29b29330'}?w=150`
-    };
-
-    // Store in simulated list of users
-    const userIndex = db.users.findIndex((u: any) => u.email === email);
-    if (userIndex !== -1) {
-      db.users[userIndex] = newUser;
-    } else {
-      db.users.push(newUser);
-    }
-    saveData(db);
-
-    logAudit(simulatedId, 'USER_REGISTER_SIMULATED', `Registered simulated Supabase account (credentials unconfigured): ${email}`, req);
-
-    return res.json({
-      success: true,
-      user: newUser,
-      simulated: true,
-      message: 'Created simulated profile. Provide SUPABASE_ANON_KEY to run live authentication.'
-    });
-  }
-});
-
-app.post('/api/supabase/auth/login', async (req, res) => {
-  const { email, password } = req.body;
-
-  if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password are required.' });
-  }
-
-  const supabase = getSupabaseClient();
-  const db = loadData();
-
-  if (supabase) {
-    try {
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      if (signInError) {
-        return res.status(400).json({ error: signInError.message });
-      }
-
-      if (!data.user) {
-        return res.status(500).json({ error: 'Authentication returned an empty user.' });
-      }
-
-      const uid = data.user.id;
-
-      // Try to fetch user profile from Supabase users table
-      let targetUser: any = null;
-      try {
-        const { data: userProfile, error: fetchError } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', uid)
-          .single();
-        if (!fetchError && userProfile) {
-          targetUser = userProfile;
-        }
-      } catch (e) {}
-
-      // Fallback: if not in Supabase database but in auth, construct or look up locally
-      if (!targetUser) {
-        const localUser = db.users.find((u: any) => u.email === email);
-        if (localUser) {
-          targetUser = { ...localUser, id: uid };
-        } else {
-          targetUser = {
-            id: uid,
-            name: data.user.user_metadata?.name || email.split('@')[0],
-            email,
-            role: data.user.user_metadata?.role || 'buyer',
-            phone: data.user.user_metadata?.phone || '',
-            kycStatus: 'pending',
-            idNumber: '',
-            address: '',
-            consentAccepted: true,
-            consentDate: new Date().toISOString(),
-            avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150'
-          };
-        }
-        
-        try {
-          await supabase.from('users').upsert(targetUser);
-        } catch (e) {}
-      }
-
-      // Sync back to local db.json
-      const userIndex = db.users.findIndex((u: any) => u.email === email || u.id === uid);
-      if (userIndex !== -1) {
-        db.users[userIndex] = targetUser;
-      } else {
-        db.users.push(targetUser);
-      }
-      saveData(db);
-
-      logAudit(uid, 'USER_LOGIN_SUPABASE', `Successfully authenticated with real Supabase session: ${email}`, req);
-
-      return res.json({
-        success: true,
-        user: targetUser,
-        session: data.session,
-        message: 'Successfully authenticated with real cloud database.'
-      });
-
-    } catch (err: any) {
-      console.error("Supabase Auth login error:", err);
-      return res.status(500).json({ error: err.message || 'Supabase authentication failed.' });
-    }
-  } else {
-    // Simulated login fallback
-    const user = db.users.find((u: any) => u.email === email);
-
-    if (user) {
-      logAudit(user.id, 'USER_LOGIN_SIMULATED', `Logged in via simulated Supabase account (credentials unconfigured): ${email}`, req);
-      return res.json({
-        success: true,
-        user,
-        simulated: true,
-        message: 'Simulated login succeeded. Provide SUPABASE_ANON_KEY to run live authentication.'
-      });
-    } else {
-      // Create user on-the-fly for quick onboarding of default accounts
-      const matchedSampleUser = INITIAL_DATA.users.find(u => u.email === email);
-      if (matchedSampleUser) {
-        db.users.push(matchedSampleUser);
-        saveData(db);
-        return res.json({
-          success: true,
-          user: matchedSampleUser,
-          simulated: true,
-          message: 'Simulated login succeeded.'
-        });
-      }
-
-      return res.status(401).json({ error: 'Account not found. Please sign up to create a simulated profile!' });
-    }
-  }
-});
-
-app.post('/api/supabase/auth/logout', (req, res) => {
-  const { userId } = req.body;
-  if (userId) {
-    const db = loadData();
-    logAudit(userId, 'USER_LOGOUT_SUPABASE', `User logged out`, req);
-  }
-  res.json({ success: true });
-});
 
 // Wildcard API 404 fallback to prevent Vite SPA HTML fallback returning 200 OK for missing endpoints
 app.all('/api/*', (req, res) => {

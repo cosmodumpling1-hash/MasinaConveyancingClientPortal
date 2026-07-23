@@ -15,7 +15,7 @@ import MessagingHub from './components/MessagingHub';
 import AppointmentCalendar from './components/AppointmentCalendar';
 import AnalyticsDashboard from './components/AnalyticsDashboard';
 import AdminPanel from './components/AdminPanel';
-import SupabaseAuthCenter from './components/SupabaseAuthCenter';
+import AuthCenter from './components/AuthCenter';
 import UserProfileModal from './components/UserProfileModal';
 import LegalModal from './components/LegalModal';
 import MasinaLogo from './components/MasinaLogo';
@@ -49,7 +49,7 @@ export default function App() {
   // Load and refresh state from Full-stack API
   const refreshAllContexts = async (userIdToAuth?: string) => {
     try {
-      // 1. Fetch Users List from Live Supabase / Database API
+      // 1. Fetch Users List from Live API
       let liveUsers: User[] = [];
       try {
         liveUsers = await safeFetch<User[]>('/api/users');
@@ -426,7 +426,7 @@ export default function App() {
           <div className="flex flex-col items-center justify-center text-center mb-4">
             <MasinaLogo size="lg" />
           </div>
-          <SupabaseAuthCenter 
+          <AuthCenter 
             currentUser={currentUser}
             onLoginSuccess={(user) => {
               try { localStorage.setItem('masina_current_user_id', user.id); } catch (e) {}
@@ -481,7 +481,7 @@ export default function App() {
     { id: 'tasks', label: 'Action Tasks', icon: ClipboardList },
     { id: 'messages', label: 'Secure Message', icon: MessageSquare },
     { id: 'appointments', label: 'Consultation Calendar', icon: Calendar },
-    { id: 'supabase-auth', label: 'Identity & Supabase Auth', icon: Lock },
+    { id: 'auth-center', label: 'Identity & Auth', icon: Lock },
     { id: 'admin', label: 'System Admin Panel', icon: Shield }
   ] : [
     { id: 'dashboard', label: 'Active Matter Tracker', icon: Building2 },
@@ -490,7 +490,7 @@ export default function App() {
     { id: 'tasks', label: 'My Action Tasks', icon: ClipboardList },
     { id: 'messages', label: 'Message Attorney', icon: MessageSquare },
     { id: 'appointments', label: 'Book Consultation', icon: Calendar },
-    { id: 'supabase-auth', label: 'Identity & Supabase Auth', icon: Lock }
+    { id: 'auth-center', label: 'Identity & Auth', icon: Lock }
   ];
 
   return (
@@ -508,7 +508,7 @@ export default function App() {
         onLogout={async () => {
           try { localStorage.removeItem('masina_current_user_id'); } catch (e) {}
           try {
-            await fetch('/api/supabase/auth/logout', {
+            await fetch('/api/auth/logout', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ userId: currentUser?.id })
@@ -588,14 +588,14 @@ export default function App() {
         {/* Right Main Core Visual Pane */}
         <main className="flex-1 min-w-0">
           
-          {/* Supabase Security Hub View */}
-          {activeTab === 'supabase-auth' && (
+          {/* Security Hub View */}
+          {activeTab === 'auth-center' && (
             <div className="space-y-6">
               <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-                <h2 className="text-lg font-bold text-slate-900">Supabase Security Hub</h2>
+                <h2 className="text-lg font-bold text-slate-900">Security Hub</h2>
                 <p className="text-xs text-slate-500 mt-1">Authenticate sessions, register compliant client profiles, and check synchronization pipelines.</p>
               </div>
-              <SupabaseAuthCenter 
+              <AuthCenter 
                 currentUser={currentUser}
                 onLoginSuccess={(user) => {
                   try { localStorage.setItem('masina_current_user_id', user.id); } catch (e) {}
@@ -616,7 +616,7 @@ export default function App() {
           )}
 
           {/* STAFF VIEWS */}
-          {isStaff && activeTab !== 'supabase-auth' && (
+          {isStaff && activeTab !== 'auth-center' && (
             <>
               {activeTab === 'dashboard' && (
                 <div className="space-y-6">
@@ -734,7 +734,7 @@ export default function App() {
           )}
 
           {/* CLIENT VIEWS */}
-          {!isStaff && activeTab !== 'supabase-auth' && (
+          {!isStaff && activeTab !== 'auth-center' && (
             <>
               {activeTab === 'dashboard' && activeMatter && (
                 <div className="space-y-6">

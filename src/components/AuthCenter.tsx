@@ -3,7 +3,7 @@ import { Shield, Mail, Lock, UserPlus, LogIn, LogOut, CheckCircle2, RefreshCw, A
 import { User as UserType } from '../types';
 import { safeFetch } from '../lib/safeFetch';
 
-interface SupabaseAuthCenterProps {
+interface AuthCenterProps {
   currentUser: UserType | null;
   onLoginSuccess: (user: UserType) => void;
   onLogoutSuccess: () => void;
@@ -11,20 +11,19 @@ interface SupabaseAuthCenterProps {
   onOpenLegalModal?: (tab?: 'privacy' | 'terms') => void;
 }
 
-export default function SupabaseAuthCenter({
+export default function AuthCenter({
   currentUser,
   onLoginSuccess,
   onLogoutSuccess,
   allUsers,
   onOpenLegalModal
-}: SupabaseAuthCenterProps) {
+}: AuthCenterProps) {
   const [activeTab, setActiveTab] = React.useState<'login' | 'signup'>('login');
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [success, setSuccess] = React.useState<string | null>(null);
 
   // Connection config state
-  const [supabaseConfig, setSupabaseConfig] = React.useState<{ url: string; projectId: string; hasKey: boolean } | null>(null);
 
   // Form States
   const [email, setEmail] = React.useState('');
@@ -36,18 +35,9 @@ export default function SupabaseAuthCenter({
   const [address, setAddress] = React.useState('');
   const [consentAccepted, setConsentAccepted] = React.useState(true);
 
-  const fetchConfig = async () => {
-    try {
-      const data = await safeFetch('/api/supabase/config');
-      setSupabaseConfig(data);
-    } catch (err) {
-      console.error("Error fetching Supabase configuration:", err);
-    }
-  };
+  
 
-  React.useEffect(() => {
-    fetchConfig();
-  }, []);
+  
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,7 +51,7 @@ export default function SupabaseAuthCenter({
     setSuccess(null);
 
     try {
-      const data = await safeFetch('/api/supabase/auth/login', {
+      const data = await safeFetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
@@ -120,7 +110,7 @@ export default function SupabaseAuthCenter({
     setSuccess(null);
 
     try {
-      const data = await safeFetch('/api/supabase/auth/signup', {
+      const data = await safeFetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -167,7 +157,7 @@ export default function SupabaseAuthCenter({
   const handleLogout = async () => {
     setLoading(true);
     try {
-      await fetch('/api/supabase/auth/logout', {
+      await fetch('/api/auth/logout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: currentUser?.id })
@@ -188,13 +178,13 @@ export default function SupabaseAuthCenter({
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/60 shadow-premium overflow-hidden max-w-2xl mx-auto animate-fade-in" id="supabase-auth-hub">
+    <div className="bg-white rounded-2xl border border-slate-200/60 shadow-premium overflow-hidden max-w-2xl mx-auto animate-fade-in" id="auth-hub">
       {/* Top Banner header */}
       <div className="bg-brand-navy text-white p-5 sm:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-800 gap-3">
         <div>
           <div className="flex items-center space-x-2 text-brand-gold font-bold uppercase text-xs tracking-wider">
             <Shield className="h-4 w-4 animate-pulse" />
-            <span>Identity Trust & Supabase Auth Hub</span>
+            <span>Identity Trust & System Auth Hub</span>
           </div>
           <h2 className="text-lg font-serif font-bold text-white mt-1">Conveyancing Portal Authorization</h2>
         </div>
