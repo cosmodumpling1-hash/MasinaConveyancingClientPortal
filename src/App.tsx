@@ -19,6 +19,7 @@ import SupabaseAuthCenter from './components/SupabaseAuthCenter';
 import UserProfileModal from './components/UserProfileModal';
 import LegalModal from './components/LegalModal';
 import MasinaLogo from './components/MasinaLogo';
+import { safeFetch } from './lib/safeFetch';
 
 export default function App() {
   // Session context states
@@ -49,73 +50,82 @@ export default function App() {
   const refreshAllContexts = async (userIdToAuth?: string) => {
     try {
       // 1. Fetch Users List from Live Supabase / Database API
-      const usersRes = await fetch('/api/users');
       let liveUsers: User[] = [];
-      if (usersRes.ok) {
-        liveUsers = await usersRes.json();
+      try {
+        liveUsers = await safeFetch<User[]>('/api/users');
         setAllUsers(liveUsers);
+      } catch (e) {
+        console.warn('Failed to load users list from API', e);
       }
 
-      const mattersRes = await fetch('/api/matters');
-      const mattersData = await mattersRes.json();
-      setMatters(mattersData);
+      try {
+        const mattersData = await safeFetch<PropertyMatter[]>('/api/matters');
+        setMatters(mattersData);
+      } catch (e) {}
 
-      const docsRes = await fetch('/api/documents');
-      const docsData = await docsRes.json();
-      setDocuments(docsData);
+      try {
+        const docsData = await safeFetch<Document[]>('/api/documents');
+        setDocuments(docsData);
+      } catch (e) {}
 
-      const tasksRes = await fetch('/api/tasks');
-      const tasksData = await tasksRes.json();
-      setTasks(tasksData);
+      try {
+        const tasksData = await safeFetch<Task[]>('/api/tasks');
+        setTasks(tasksData);
+      } catch (e) {}
 
-      const appointmentsRes = await fetch('/api/appointments');
-      const appointmentsData = await appointmentsRes.json();
-      setAppointments(appointmentsData);
+      try {
+        const appointmentsData = await safeFetch<Appointment[]>('/api/appointments');
+        setAppointments(appointmentsData);
+      } catch (e) {}
 
-      const convsRes = await fetch('/api/conversations');
-      const convsData = await convsRes.json();
-      setConversations(convsData);
+      try {
+        const convsData = await safeFetch<Conversation[]>('/api/conversations');
+        setConversations(convsData);
+      } catch (e) {}
 
-      const rulesRes = await fetch('/api/automation/rules');
-      // If endpoint doesn't exist, use fallbacks gracefully
-      if (rulesRes.ok) {
-        const rulesData = await rulesRes.json();
+      try {
+        const rulesData = await safeFetch<AutomationRule[]>('/api/automation/rules');
         setAutomationRules(rulesData);
-      } else {
-        // Fallback placeholder rules
+      } catch (e) {
         setAutomationRules([
           { id: 'rule-1', name: 'Welcome Onboarding Notification', trigger: 'matter_opened', actionType: 'email', template: 'Dear {{client_name}}, welcome...', enabled: true },
           { id: 'rule-2', name: 'Stage Completed Alert', trigger: 'stage_completed', actionType: 'push', template: 'Great news...', enabled: true }
         ]);
       }
 
-      const autoLogsRes = await fetch('/api/automation/logs');
-      const autoLogsData = await autoLogsRes.json();
-      setAutomationLogs(autoLogsData);
+      try {
+        const autoLogsData = await safeFetch<AutomationLog[]>('/api/automation/logs');
+        setAutomationLogs(autoLogsData);
+      } catch (e) {}
 
-      const auditRes = await fetch('/api/audit/logs');
-      const auditData = await auditRes.json();
-      setAuditLogs(auditData);
+      try {
+        const auditData = await safeFetch<AuditLog[]>('/api/audit/logs');
+        setAuditLogs(auditData);
+      } catch (e) {}
 
       // Initialize the active user profile context on startup
       const targetUserId = userIdToAuth || currentUser?.id || (liveUsers[0]?.id || 'usr-admin-1');
-      const loginRes = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: targetUserId })
-      });
-      if (loginRes.ok) {
-        const loginData = await loginRes.json();
-        setCurrentUser(loginData.user);
-      } else if (liveUsers.length > 0) {
-        const found = liveUsers.find(u => u.id === targetUserId) || liveUsers[0];
-        setCurrentUser(found);
+      try {
+        const loginData = await safeFetch<{ user: User }>('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: targetUserId })
+        });
+        if (loginData?.user) {
+          setCurrentUser(loginData.user);
+        }
+      } catch (e) {
+        if (liveUsers.length > 0) {
+          const found = liveUsers.find(u => u.id === targetUserId) || liveUsers[0];
+          setCurrentUser(found);
+        }
       }
 
       // Pull message thread for current active conversation
-      const msgRes = await fetch('/api/conversations/conv-1/messages');
-      const msgData = await msgRes.json();
-      setMessages(msgData);
+      try {
+        const msgData = await safeFetch<Message[]>('/api/conversations/conv-1/messages');
+        setMessages(msgData);
+      } catch (e) {}
 
     } catch (err) {
       console.error("API Fetch Error, using simulated framework:", err);
@@ -142,7 +152,7 @@ export default function App() {
 
   const handleUpdateUserKyc = async (updatedUser: User) => {
     try {
-      const res = await fetch('/api/auth/kyc-update', {
+      const data = await safeFetch('/api/auth/kyc-update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -152,8 +162,9 @@ export default function App() {
           phone: updatedUser.phone
         })
       });
-      const data = await res.json();
-      setCurrentUser(data.user);
+      if (data.user) {
+        setCurrentUser(data.user);
+      }
       await refreshAllContexts(updatedUser.id);
     } catch (err) {
       console.error(err);
@@ -163,13 +174,14 @@ export default function App() {
   const handleOpenMatter = async (matterData: any) => {
     setLoading(true);
     try {
-      const res = await fetch('/api/matters', {
+      const data = await safeFetch('/api/matters', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(matterData)
       });
-      const data = await res.json();
-      setSelectedMatterId(data.id);
+      if (data.id) {
+        setSelectedMatterId(data.id);
+      }
       await refreshAllContexts(currentUser?.id);
       setActiveTab('dashboard');
     } catch (err) {
@@ -345,17 +357,14 @@ export default function App() {
   const handleUpdateUserProfile = async (updatedFields: Partial<User>) => {
     if (!currentUser) return;
     try {
-      const res = await fetch(`/api/users/${currentUser.id}`, {
+      const data = await safeFetch<{ user: User }>(`/api/users/${currentUser.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedFields)
       });
-      if (res.ok) {
-        const data = await res.json();
+      if (data.user) {
         setCurrentUser(data.user);
         await refreshAllContexts(data.user.id);
-      } else {
-        throw new Error('Failed to update profile.');
       }
     } catch (err) {
       console.error(err);
@@ -365,17 +374,13 @@ export default function App() {
 
   const handleDeleteUser = async (userId: string) => {
     try {
-      const res = await fetch(`/api/users/${userId}`, {
+      await safeFetch(`/api/users/${userId}`, {
         method: 'DELETE'
       });
-      if (res.ok) {
-        if (currentUser?.id === userId) {
-          setCurrentUser(null);
-        }
-        await refreshAllContexts();
-      } else {
-        throw new Error('Failed to delete user account.');
+      if (currentUser?.id === userId) {
+        setCurrentUser(null);
       }
+      await refreshAllContexts();
     } catch (err) {
       console.error(err);
       throw err;
@@ -385,17 +390,14 @@ export default function App() {
   const handleSubscribe = async (plan: 'free' | 'pro' | 'enterprise', newsletter: boolean) => {
     if (!currentUser) return;
     try {
-      const res = await fetch(`/api/users/${currentUser.id}/subscribe`, {
+      const data = await safeFetch<{ user: User }>(`/api/users/${currentUser.id}/subscribe`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plan, subscribedToNewsletter: newsletter })
       });
-      if (res.ok) {
-        const data = await res.json();
+      if (data.user) {
         setCurrentUser(data.user);
         await refreshAllContexts(data.user.id);
-      } else {
-        throw new Error('Failed to update subscription status.');
       }
     } catch (err) {
       console.error(err);

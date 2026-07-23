@@ -1,6 +1,7 @@
 import React from 'react';
 import { Shield, Fingerprint, FileText, Check, AlertCircle, Camera, CheckCircle2, UserCheck, Sparkles, Signature, RefreshCw } from 'lucide-react';
 import { User } from '../types';
+import { safeFetch } from '../lib/safeFetch';
 
 interface OnboardingWizardProps {
   currentUser: User;
@@ -91,7 +92,7 @@ export default function OnboardingWizard({ currentUser, onUpdateUser, onOpenMatt
     }
     setLoading(true);
     try {
-      const response = await fetch('/api/ai/kyc-verify', {
+      const data = await safeFetch('/api/ai/kyc-verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -100,7 +101,6 @@ export default function OnboardingWizard({ currentUser, onUpdateUser, onOpenMatt
           textContent: simulatedDoc.textContent
         })
       });
-      const data = await response.json();
       setVerificationResult(data);
 
       if (data.success) {

@@ -2340,6 +2340,17 @@ app.all('/api/*', (req, res) => {
   res.status(404).json({ error: `API route ${req.method} ${req.originalUrl} not found` });
 });
 
+// Express Global Error Handler to guarantee clean JSON errors instead of HTML stack traces
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error("Unhandled Server Error:", err);
+  if (res.headersSent) {
+    return next(err);
+  }
+  res.status(err.status || 500).json({
+    error: err.message || 'An unexpected internal server error occurred'
+  });
+});
+
 // Serve frontend assets
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
@@ -2361,4 +2372,8 @@ async function startServer() {
   });
 }
 
+// Export express app for serverless environments like Vercel
+export default app;
+
 startServer();
+

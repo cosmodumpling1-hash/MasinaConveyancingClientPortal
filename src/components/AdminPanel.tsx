@@ -1,6 +1,7 @@
 import React from 'react';
 import { Shield, Users, Mail, Bell, FileText, CheckCircle2, Terminal, Sparkles, RefreshCw, Copy, Check, Power, Database, ExternalLink, UserCheck, ShieldAlert, Clock, AlertTriangle, Trash2 } from 'lucide-react';
 import { User, AuditLog, AutomationRule, AutomationLog } from '../types';
+import { safeFetch } from '../lib/safeFetch';
 
 interface AdminPanelProps {
   currentUser: User;
@@ -45,17 +46,14 @@ export default function AdminPanel({
     setAllocationMsg(null);
 
     try {
-      const res = await fetch(`/api/users/${userId}/role`, {
+      const data = await safeFetch(`/api/users/${userId}/role`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role: targetRole, adminUserId: currentUser.id })
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to allocate role');
-
       setUsersList(prev => prev.map(u => u.id === userId ? { ...u, role: targetRole as any } : u));
-      setAllocationMsg({ type: 'success', text: `Role successfully allocated to ${targetRole.toUpperCase()} for ${data.user.name}.` });
+      setAllocationMsg({ type: 'success', text: `Role successfully allocated to ${targetRole.toUpperCase()} for ${data.user?.name || 'User'}.` });
       
       if (onAllocateRole) {
         onAllocateRole(userId, targetRole);
@@ -79,23 +77,20 @@ export default function AdminPanel({
   const fetchSupabaseInfo = async () => {
     setLoadingConfig(true);
     try {
-      const configRes = await fetch('/api/supabase/config');
-      if (configRes.ok) {
-        const configData = await configRes.json();
+      try {
+        const configData = await safeFetch('/api/supabase/config');
         setSupabaseConfig(configData);
-      }
+      } catch (e) {}
 
-      const statusRes = await fetch('/api/supabase/status');
-      if (statusRes.ok) {
-        const statusData = await statusRes.json();
+      try {
+        const statusData = await safeFetch('/api/supabase/status');
         setSupabaseStatus(statusData);
-      }
+      } catch (e) {}
 
-      const sqlRes = await fetch('/api/supabase/sql-schema');
-      if (sqlRes.ok) {
-        const sqlData = await sqlRes.json();
-        setSupabaseSql(sqlData.sql);
-      }
+      try {
+        const sqlData = await safeFetch('/api/supabase/sql-schema');
+        if (sqlData?.sql) setSupabaseSql(sqlData.sql);
+      } catch (e) {}
     } catch (err) {
       console.error("Error fetching Supabase configuration:", err);
     } finally {
@@ -111,18 +106,16 @@ export default function AdminPanel({
     setSyncing(true);
     setSyncResult(null);
     try {
-      const res = await fetch('/api/supabase/sync', {
+      const data = await safeFetch('/api/supabase/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
-      const data = await res.json();
       setSyncResult(data);
       // Refresh status after trying to sync
-      const statusRes = await fetch('/api/supabase/status');
-      if (statusRes.ok) {
-        const statusData = await statusRes.json();
+      try {
+        const statusData = await safeFetch('/api/supabase/status');
         setSupabaseStatus(statusData);
-      }
+      } catch (e) {}
     } catch (err: any) {
       setSyncResult({
         success: false,
@@ -136,9 +129,8 @@ export default function AdminPanel({
   const handleClearLocalData = async () => {
     if (!window.confirm("Are you sure you want to clear all local data and reset to initial baseline?")) return;
     try {
-      const res = await fetch('/api/admin/clear-local-data', { method: 'POST' });
-      const data = await res.json();
-      if (res.ok && data.success) {
+      const data = await safeFetch('/api/admin/clear-local-data', { method: 'POST' });
+      if (data.success) {
         alert(data.message || "Local data successfully cleared!");
         window.location.reload();
       } else {
