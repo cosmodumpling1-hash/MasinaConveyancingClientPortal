@@ -1,7 +1,6 @@
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
-import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
@@ -50,7 +49,9 @@ function getSupabaseClient() {
 }
 
 // Simple file-based database for persistence
-const DB_FILE = path.join(process.cwd(), 'db.json');
+const DB_FILE = (process.env.VERCEL || process.env.NODE_ENV === 'production')
+  ? path.join('/tmp', 'db.json')
+  : path.join(process.cwd(), 'db.json');
 
 // Initial baseline data
 const INITIAL_DATA = {
@@ -2353,23 +2354,32 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 
 // Serve frontend assets
 async function startServer() {
-  if (process.env.NODE_ENV !== 'production') {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
-    app.use(vite.middlewares);
+  if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+    try {
+      const { createServer: createViteServer } = await import('vite');
+      const vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: 'spa',
+      });
+      app.use(vite.middlewares);
+    } catch (e) {
+      console.warn("Vite middleware omitted:", e);
+    }
   } else {
     const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
-    });
+    if (fs.existsSync(distPath)) {
+      app.use(express.static(distPath));
+      app.get('*', (req, res) => {
+        res.sendFile(path.join(distPath, 'index.html'));
+      });
+    }
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on http://0.0.0.0:${PORT}`);
-  });
+  if (!process.env.VERCEL) {
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Server running on http://0.0.0.0:${PORT}`);
+    });
+  }
 }
 
 // Export express app for serverless environments like Vercel
