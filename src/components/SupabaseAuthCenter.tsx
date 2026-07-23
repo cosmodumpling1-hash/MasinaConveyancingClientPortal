@@ -199,17 +199,10 @@ export default function SupabaseAuthCenter({
           <h2 className="text-lg font-serif font-bold text-white mt-1">Conveyancing Portal Authorization</h2>
         </div>
         
-        {supabaseConfig?.hasKey ? (
-          <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-mono uppercase px-2.5 py-1 rounded-full font-bold flex items-center space-x-1 shrink-0">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping" />
-            <span>LIVE CLOUD MODE</span>
-          </span>
-        ) : (
-          <span className="bg-amber-500/10 text-brand-gold border border-brand-gold/20 text-[10px] font-mono uppercase px-2.5 py-1 rounded-full font-bold flex items-center space-x-1 shrink-0">
-            <span className="h-1.5 w-1.5 rounded-full bg-brand-gold" />
-            <span>SANDBOX MODE</span>
-          </span>
-        )}
+        <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-mono uppercase px-2.5 py-1 rounded-full font-bold flex items-center space-x-1 shrink-0">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping" />
+          <span>LIVE CLOUD MODE</span>
+        </span>
       </div>
 
       <div className="p-6 space-y-6">

@@ -327,7 +327,7 @@ export default function DocumentManager({ documents, currentUser, matterId, onUp
             </button>
           </form>
 
-          {/* Quick Upload Sandbox Presets */}
+          {/* Quick Upload Cloud Presets */}
           <div className="border-t border-slate-800 pt-3">
             <span className="text-[10px] text-slate-400 font-bold block uppercase mb-1.5">Quick Demo Presets:</span>
             <div className="flex flex-wrap gap-1.5">

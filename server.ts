@@ -13,14 +13,23 @@ const PORT = 3000;
 
 app.use(express.json({ limit: '10mb' }));
 
-// Ensure API requests handled by Vercel function have /api prefix for Express routing
+// Ensure API requests handled by Vercel function have clean /api pathing for Express routing
 app.use((req, res, next) => {
-  if ((process.env.VERCEL || process.env.VERCEL_ENV) && req.url) {
-    if (!req.url.startsWith('/api') && !req.url.includes('.')) {
-      req.url = '/api' + (req.url.startsWith('/') ? req.url : '/' + req.url);
+  if (req.url) {
+    if (req.url.includes('/api/index')) {
+      req.url = req.url.replace('/api/index.ts', '/api').replace('/api/index', '/api');
     }
   }
   next();
+});
+
+// API Root Status Handler
+app.get(['/api', '/api/'], (req, res) => {
+  res.json({
+    status: 'online',
+    service: 'Masina Conveyancing API',
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Lazy initialize Gemini API client to prevent crash on startup if key is missing
@@ -521,7 +530,21 @@ function loadData() {
   try {
     if (fs.existsSync(DB_FILE)) {
       const data = fs.readFileSync(DB_FILE, 'utf8');
-      return JSON.parse(data);
+      const parsed = JSON.parse(data);
+      if (parsed && typeof parsed === 'object') {
+        return {
+          users: Array.isArray(parsed.users) ? parsed.users : INITIAL_DATA.users,
+          matters: Array.isArray(parsed.matters) ? parsed.matters : INITIAL_DATA.matters,
+          documents: Array.isArray(parsed.documents) ? parsed.documents : INITIAL_DATA.documents,
+          tasks: Array.isArray(parsed.tasks) ? parsed.tasks : INITIAL_DATA.tasks,
+          conversations: Array.isArray(parsed.conversations) ? parsed.conversations : INITIAL_DATA.conversations,
+          messages: Array.isArray(parsed.messages) ? parsed.messages : INITIAL_DATA.messages,
+          appointments: Array.isArray(parsed.appointments) ? parsed.appointments : INITIAL_DATA.appointments,
+          automationRules: Array.isArray(parsed.automationRules) ? parsed.automationRules : INITIAL_DATA.automationRules,
+          automationLogs: Array.isArray(parsed.automationLogs) ? parsed.automationLogs : INITIAL_DATA.automationLogs,
+          auditLogs: Array.isArray(parsed.auditLogs) ? parsed.auditLogs : INITIAL_DATA.auditLogs,
+        };
+      }
     }
   } catch (err) {
     console.error("Error reading database file, using fallback:", err);

@@ -43,7 +43,7 @@ export default function Navbar({ currentUser, allUsers, onSwitchUser, onLogout, 
             <MasinaLogo size="md" />
           </div>
 
-          {/* Center Sandbox & Legal Governance Information */}
+          {/* Center Live Cloud & Legal Governance Information */}
           <div className="hidden md:flex items-center space-x-3">
             <div className="flex items-center space-x-2 text-xs text-slate-500 bg-brand-cream px-3 py-1.5 rounded-lg border border-slate-100">
               <span className="flex h-2 w-2 relative">
