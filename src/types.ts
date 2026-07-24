@@ -15,6 +15,9 @@ export interface User {
   subscriptionPlan?: 'free' | 'pro' | 'enterprise';
   subscriptionStatus?: 'active' | 'inactive' | 'cancelled' | 'trial';
   subscribedToNewsletter?: boolean;
+  password?: string;
+  allocatedStaffIds?: string[];
+  allocatedClientIds?: string[];
 }
 
 export type DocumentCategory = 

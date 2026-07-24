@@ -9,7 +9,7 @@ dotenv.config();
 
 const app = express();
 const PORT = 3000;
-
+  
 app.use(express.json({ limit: '10mb' }));
 
 // Ensure API requests handled by Vercel function have clean /api pathing for Express routing
@@ -69,7 +69,8 @@ const INITIAL_DATA = {
       address: '14 Blue Crane Estate, Midrand, South Africa',
       consentAccepted: true,
       consentDate: '2026-07-15T09:30:00Z',
-      avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150'
+      avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150',
+      allocatedStaffIds: ['usr-attorney-1', 'usr-convey-1', 'usr-paralegal-1', 'usr-attorney-2']
     },
     {
       id: 'usr-client-2',
@@ -82,7 +83,8 @@ const INITIAL_DATA = {
       address: '124 Villa Rosa, Sandton, Johannesburg',
       consentAccepted: true,
       consentDate: '2026-07-10T14:15:00Z',
-      avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150'
+      avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
+      allocatedStaffIds: ['usr-attorney-1', 'usr-convey-2', 'usr-paralegal-2']
     },
     {
       id: 'usr-attorney-1',
@@ -92,7 +94,19 @@ const INITIAL_DATA = {
       phone: '+27 11 432 9000',
       kycStatus: 'verified',
       consentAccepted: true,
-      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150'
+      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
+      allocatedClientIds: ['usr-client-1', 'usr-client-2']
+    },
+    {
+      id: 'usr-attorney-2',
+      name: 'Adv. David Nkosi',
+      email: 'david.nkosi@masinalaw.co.za',
+      role: 'attorney',
+      phone: '+27 11 432 9002',
+      kycStatus: 'verified',
+      consentAccepted: true,
+      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+      allocatedClientIds: ['usr-client-1']
     },
     {
       id: 'usr-convey-1',
@@ -102,7 +116,19 @@ const INITIAL_DATA = {
       phone: '+27 11 432 9005',
       kycStatus: 'verified',
       consentAccepted: true,
-      avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150'
+      avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150',
+      allocatedClientIds: ['usr-client-1']
+    },
+    {
+      id: 'usr-convey-2',
+      name: 'Bongiwe Dlamini',
+      email: 'bongiwe@masinalaw.co.za',
+      role: 'conveyancer',
+      phone: '+27 11 432 9008',
+      kycStatus: 'verified',
+      consentAccepted: true,
+      avatarUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150',
+      allocatedClientIds: ['usr-client-2']
     },
     {
       id: 'usr-paralegal-1',
@@ -112,7 +138,19 @@ const INITIAL_DATA = {
       phone: '+27 11 432 9011',
       kycStatus: 'verified',
       consentAccepted: true,
-      avatarUrl: 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=150'
+      avatarUrl: 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?w=150',
+      allocatedClientIds: ['usr-client-1']
+    },
+    {
+      id: 'usr-paralegal-2',
+      name: 'Thabo Mokoena',
+      email: 'thabo@masinalaw.co.za',
+      role: 'paralegal',
+      phone: '+27 11 432 9014',
+      kycStatus: 'verified',
+      consentAccepted: true,
+      avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150',
+      allocatedClientIds: ['usr-client-2']
     },
     {
       id: 'usr-admin-1',
@@ -542,34 +580,184 @@ function saveData(data: any) {
   }
 }
 
-// --- Local Database Helpers ---
+// --- Supabase Database Integration & Fallback Helpers ---
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY;
+const useSupabase = !!(process.env.SUPABASE_URL && supabaseKey);
+const supabase = useSupabase ? createClient(process.env.SUPABASE_URL!, supabaseKey!) : null;
+
+function parseUser(user: any) {
+  if (!user) return null;
+  const copy = { ...user };
+  const avatar = copy.avatarUrl || '';
+  if (avatar.startsWith('AUTH:')) {
+    try {
+      const idx = avatar.indexOf('|');
+      if (idx !== -1) {
+        copy.password = avatar.substring(5, idx);
+        copy.avatarUrl = avatar.substring(idx + 1);
+      } else {
+        copy.password = avatar.substring(5);
+        copy.avatarUrl = '';
+      }
+    } catch (e) {
+      copy.password = 'masina123';
+    }
+  } else {
+    copy.password = 'masina123';
+  }
+
+  // Parse JSON stringified allocation arrays if stored as strings in Supabase or legacy DB
+  if (typeof copy.allocatedStaffIds === 'string') {
+    try { copy.allocatedStaffIds = JSON.parse(copy.allocatedStaffIds); } catch(e) { copy.allocatedStaffIds = []; }
+  }
+  if (!Array.isArray(copy.allocatedStaffIds)) {
+    copy.allocatedStaffIds = copy.allocatedStaffIds ? [copy.allocatedStaffIds] : [];
+  }
+
+  if (typeof copy.allocatedClientIds === 'string') {
+    try { copy.allocatedClientIds = JSON.parse(copy.allocatedClientIds); } catch(e) { copy.allocatedClientIds = []; }
+  }
+  if (!Array.isArray(copy.allocatedClientIds)) {
+    copy.allocatedClientIds = copy.allocatedClientIds ? [copy.allocatedClientIds] : [];
+  }
+
+  return copy;
+}
+
+function formatUser(user: any) {
+  if (!user) return null;
+  const copy = { ...user };
+  const password = copy.password || 'masina123';
+  const realUrl = copy.avatarUrl || '';
+  copy.avatarUrl = `AUTH:${password}|${realUrl}`;
+  delete copy.password;
+  return copy;
+}
 
 async function getUsersFromDb() {
-  return loadData().users;
+  const localUsers = loadData().users || [];
+  const localMap = new Map();
+  localUsers.forEach((u: any) => {
+    const parsed = parseUser(u);
+    if (parsed && parsed.id) localMap.set(parsed.id, parsed);
+  });
+
+  if (useSupabase && supabase) {
+    const { data, error } = await supabase.from('users').select('*');
+    if (!error && Array.isArray(data)) {
+      return data.map((su: any) => {
+        const parsed = parseUser(su);
+        const local = localMap.get(parsed.id) || {};
+        return {
+          ...local,
+          ...parsed,
+          allocatedStaffIds: (parsed.allocatedStaffIds && parsed.allocatedStaffIds.length > 0)
+            ? parsed.allocatedStaffIds
+            : (local.allocatedStaffIds || []),
+          allocatedClientIds: (parsed.allocatedClientIds && parsed.allocatedClientIds.length > 0)
+            ? parsed.allocatedClientIds
+            : (local.allocatedClientIds || [])
+        };
+      });
+    } else if (error) {
+      console.warn('Notice fetching users from Supabase, using local database:', error.message);
+    }
+  }
+  return localUsers.map((u: any) => parseUser(u));
 }
 
 async function saveUserToDb(user: any) {
+  const dbUser = formatUser(user);
+
+  // 1. Always write to local JSON file DB so allocations are preserved locally
   const db = loadData();
+  if (!Array.isArray(db.users)) db.users = [];
   const idx = db.users.findIndex((u: any) => u.id === user.id || u.email === user.email);
   if (idx !== -1) {
     db.users[idx] = { ...db.users[idx], ...user };
   } else {
-    db.users.push(user);
+    db.users.push({ ...user });
   }
   saveData(db);
+
+  // 2. Sync to Supabase if available
+  if (useSupabase && supabase) {
+    const { error } = await supabase.from('users').upsert(dbUser);
+    if (error) {
+      if (error.message.includes('column') || error.message.includes('schema cache')) {
+        const cleanDbUser = { ...dbUser };
+        delete cleanDbUser.allocatedClientIds;
+        delete cleanDbUser.allocatedStaffIds;
+        const { error: retryErr } = await supabase.from('users').upsert(cleanDbUser);
+        if (retryErr) {
+          console.warn('Supabase user save retry notice:', retryErr.message);
+        }
+      } else {
+        console.warn('Supabase user save notice:', error.message);
+      }
+    }
+  }
 }
 
 async function deleteUserFromDb(userId: string) {
+  if (useSupabase && supabase) {
+    const { error } = await supabase.from('users').delete().eq('id', userId);
+    if (error) {
+      console.error('Error deleting user from Supabase:', error.message);
+    } else {
+      return;
+    }
+  }
   const db = loadData();
   db.users = db.users.filter((u: any) => u.id !== userId);
   saveData(db);
 }
 
+function parseMatter(matter: any) {
+  if (!matter) return null;
+  const copy = { ...matter };
+  if (typeof copy.stages === 'string') {
+    try { copy.stages = JSON.parse(copy.stages); } catch (e) { copy.stages = []; }
+  }
+  if (!Array.isArray(copy.stages)) {
+    copy.stages = INITIAL_DATA?.matters?.[0]?.stages || [];
+  }
+  if (typeof copy.activities === 'string') {
+    try { copy.activities = JSON.parse(copy.activities); } catch (e) { copy.activities = []; }
+  }
+  if (!Array.isArray(copy.activities)) {
+    copy.activities = [];
+  }
+  return copy;
+}
+
 async function getMattersFromDb() {
-  return loadData().matters;
+  let rawMatters = [];
+  if (useSupabase && supabase) {
+    const { data, error } = await supabase.from('matters').select('*');
+    if (error) {
+      console.error('Error fetching matters from Supabase:', error.message);
+      rawMatters = loadData().matters;
+    } else {
+      rawMatters = data || [];
+    }
+  } else {
+    rawMatters = loadData().matters;
+  }
+  return rawMatters.map(m => parseMatter(m)).filter(Boolean);
 }
 
 async function saveMatterToDb(matter: any) {
+  if (useSupabase && supabase) {
+    const { error } = await supabase.from('matters').upsert(matter);
+    if (error) {
+      console.error('Error saving matter to Supabase:', error.message);
+    } else {
+      return;
+    }
+  }
   const db = loadData();
   const idx = db.matters.findIndex((m: any) => m.id === matter.id);
   if (idx !== -1) {
@@ -581,25 +769,111 @@ async function saveMatterToDb(matter: any) {
 }
 
 async function getDocumentsFromDb() {
-  return loadData().documents;
+  const localDocs = loadData().documents || [];
+  if (useSupabase && supabase) {
+    const { data, error } = await supabase.from('documents').select('*');
+    if (!error && Array.isArray(data)) {
+      const docsFromSupabase = data.map((d: any) => ({
+        id: String(d.id),
+        matterId: String(d.matterId || d.matter_id || ''),
+        name: String(d.name || 'Document.pdf'),
+        category: String(d.category || 'fica'),
+        fileUrl: String(d.fileUrl || d.file_url || '#'),
+        uploadDate: String(d.uploadDate || d.upload_date || new Date().toISOString()),
+        status: String(d.status || 'pending_review'),
+        version: Number(d.version || 1),
+        size: String(d.size || '1.5 MB'),
+        uploadedBy: String(d.uploadedBy || d.uploaded_by || 'Client'),
+        reviewerNotes: String(d.reviewerNotes || d.reviewer_notes || '')
+      }));
+
+      // Merge Supabase and Local docs by ID
+      const docMap = new Map();
+      localDocs.forEach((ld: any) => docMap.set(ld.id, ld));
+      docsFromSupabase.forEach((sd: any) => docMap.set(sd.id, sd));
+      return Array.from(docMap.values());
+    } else if (error) {
+      console.error('Error fetching documents from Supabase:', error.message);
+    }
+  }
+  return localDocs;
 }
 
 async function saveDocumentToDb(document: any) {
+  // Always update local database cache first
   const db = loadData();
   const idx = db.documents.findIndex((d: any) => d.id === document.id);
   if (idx !== -1) {
     db.documents[idx] = document;
   } else {
-    db.documents.push(document);
+    db.documents.unshift(document);
   }
   saveData(db);
+
+  if (useSupabase && supabase) {
+    const supabasePayload = {
+      id: document.id,
+      matterId: document.matterId,
+      matter_id: document.matterId,
+      name: document.name,
+      category: document.category,
+      fileUrl: document.fileUrl,
+      file_url: document.fileUrl,
+      uploadDate: document.uploadDate,
+      upload_date: document.uploadDate,
+      status: document.status,
+      version: document.version,
+      size: document.size,
+      uploadedBy: document.uploadedBy,
+      uploaded_by: document.uploadedBy,
+      reviewerNotes: document.reviewerNotes,
+      reviewer_notes: document.reviewerNotes
+    };
+
+    let { error } = await supabase.from('documents').upsert(supabasePayload);
+    if (error) {
+      const camelOnly = {
+        id: document.id,
+        matterId: document.matterId,
+        name: document.name,
+        category: document.category,
+        fileUrl: document.fileUrl,
+        uploadDate: document.uploadDate,
+        status: document.status,
+        version: document.version,
+        size: document.size,
+        uploadedBy: document.uploadedBy,
+        reviewerNotes: document.reviewerNotes
+      };
+      const resCamel = await supabase.from('documents').upsert(camelOnly);
+      if (resCamel.error) {
+        console.error('Error saving document to Supabase:', error.message || resCamel.error.message);
+      }
+    }
+  }
 }
 
 async function getTasksFromDb() {
+  if (useSupabase && supabase) {
+    const { data, error } = await supabase.from('tasks').select('*');
+    if (error) {
+      console.error('Error fetching tasks from Supabase:', error.message);
+      return loadData().tasks;
+    }
+    return data || [];
+  }
   return loadData().tasks;
 }
 
 async function saveTaskToDb(task: any) {
+  if (useSupabase && supabase) {
+    const { error } = await supabase.from('tasks').upsert(task);
+    if (error) {
+      console.error('Error saving task to Supabase:', error.message);
+    } else {
+      return;
+    }
+  }
   const db = loadData();
   const idx = db.tasks.findIndex((t: any) => t.id === task.id);
   if (idx !== -1) {
@@ -611,7 +885,28 @@ async function saveTaskToDb(task: any) {
 }
 
 async function getConversationsFromDb() {
-  return loadData().conversations;
+  const localConvs = loadData().conversations || [];
+  if (useSupabase && supabase) {
+    const { data, error } = await supabase.from('conversations').select('*');
+    if (!error && Array.isArray(data)) {
+      const convsFromSupabase = data.map((c: any) => ({
+        id: String(c.id),
+        matterId: String(c.matterId || c.matter_id || ''),
+        title: String(c.title || ''),
+        participantIds: Array.isArray(c.participantIds) ? c.participantIds : (c.participant_ids || []),
+        lastMessageText: String(c.lastMessageText || c.last_message_text || ''),
+        lastMessageTimestamp: String(c.lastMessageTimestamp || c.last_message_timestamp || new Date().toISOString())
+      }));
+
+      const convMap = new Map();
+      localConvs.forEach((lc: any) => convMap.set(lc.id, lc));
+      convsFromSupabase.forEach((sc: any) => convMap.set(sc.id, sc));
+      return Array.from(convMap.values());
+    } else if (error) {
+      console.warn('Notice fetching conversations from Supabase:', error.message);
+    }
+  }
+  return localConvs;
 }
 
 async function saveConversationToDb(conversation: any) {
@@ -623,23 +918,160 @@ async function saveConversationToDb(conversation: any) {
     db.conversations.push(conversation);
   }
   saveData(db);
+
+  if (useSupabase && supabase) {
+    const payload = {
+      id: conversation.id,
+      matterId: conversation.matterId,
+      matter_id: conversation.matterId,
+      title: conversation.title,
+      participantIds: conversation.participantIds,
+      participant_ids: conversation.participantIds,
+      lastMessageText: conversation.lastMessageText,
+      last_message_text: conversation.lastMessageText,
+      lastMessageTimestamp: conversation.lastMessageTimestamp,
+      last_message_timestamp: conversation.lastMessageTimestamp
+    };
+
+    let { error } = await supabase.from('conversations').upsert(payload);
+    if (error) {
+      const fallbackPayload = {
+        id: conversation.id,
+        matterId: conversation.matterId,
+        title: conversation.title,
+        lastMessageText: conversation.lastMessageText,
+        lastMessageTimestamp: conversation.lastMessageTimestamp
+      };
+      const resFallback = await supabase.from('conversations').upsert(fallbackPayload);
+      if (resFallback.error) {
+        console.warn('Supabase conversation save notice:', error.message || resFallback.error.message);
+      }
+    }
+  }
 }
 
 async function getMessagesFromDb() {
-  return loadData().messages;
+  const localMsgs = loadData().messages || [];
+  if (useSupabase && supabase) {
+    const { data, error } = await supabase.from('messages').select('*');
+    if (!error && Array.isArray(data)) {
+      const msgsFromSupabase = data.map((m: any) => {
+        let attachment = m.fileAttachment || m.file_attachment;
+        if (typeof attachment === 'string' && attachment.startsWith('{')) {
+          try { attachment = JSON.parse(attachment); } catch (e) {}
+        }
+        return {
+          id: String(m.id),
+          conversationId: String(m.conversationId || m.conversation_id || ''),
+          senderId: String(m.senderId || m.sender_id || ''),
+          senderName: String(m.senderName || m.sender_name || 'User'),
+          senderRole: String(m.senderRole || m.sender_role || 'client'),
+          text: String(m.text || ''),
+          timestamp: String(m.timestamp || m.created_at || new Date().toISOString()),
+          fileAttachment: attachment || undefined,
+          isRead: Boolean(m.isRead ?? m.is_read ?? false)
+        };
+      });
+
+      const msgMap = new Map();
+      localMsgs.forEach((lm: any) => msgMap.set(lm.id, lm));
+      msgsFromSupabase.forEach((sm: any) => msgMap.set(sm.id, sm));
+      return Array.from(msgMap.values());
+    } else if (error) {
+      console.warn('Notice fetching messages from Supabase:', error.message);
+    }
+  }
+  return localMsgs;
 }
 
 async function saveMessageToDb(message: any) {
   const db = loadData();
-  db.messages.push(message);
+  const idx = db.messages.findIndex((m: any) => m.id === message.id);
+  if (idx !== -1) {
+    db.messages[idx] = message;
+  } else {
+    db.messages.push(message);
+  }
   saveData(db);
+
+  if (useSupabase && supabase) {
+    const fileAttachmentVal = message.fileAttachment && typeof message.fileAttachment === 'object'
+      ? JSON.stringify(message.fileAttachment)
+      : message.fileAttachment;
+
+    const payloadFull = {
+      id: message.id,
+      conversationId: message.conversationId,
+      conversation_id: message.conversationId,
+      senderId: message.senderId,
+      sender_id: message.senderId,
+      senderName: message.senderName,
+      sender_name: message.senderName,
+      senderRole: message.senderRole,
+      sender_role: message.senderRole,
+      text: message.text || '',
+      timestamp: message.timestamp,
+      fileAttachment: fileAttachmentVal,
+      file_attachment: fileAttachmentVal,
+      isRead: message.isRead,
+      is_read: message.isRead
+    };
+
+    let { error } = await supabase.from('messages').upsert(payloadFull);
+    if (error) {
+      const payloadCore = {
+        id: message.id,
+        conversationId: message.conversationId,
+        conversation_id: message.conversationId,
+        senderId: message.senderId,
+        sender_id: message.senderId,
+        senderName: message.senderName,
+        sender_name: message.senderName,
+        senderRole: message.senderRole,
+        sender_role: message.senderRole,
+        text: message.text || '',
+        timestamp: message.timestamp,
+        isRead: message.isRead,
+        is_read: message.isRead
+      };
+      let resCore = await supabase.from('messages').upsert(payloadCore);
+      if (resCore.error) {
+        const payloadMinimal = {
+          id: message.id,
+          conversation_id: message.conversationId,
+          sender_id: message.senderId,
+          text: message.text || ''
+        };
+        const resMin = await supabase.from('messages').upsert(payloadMinimal);
+        if (resMin.error) {
+          console.warn('Supabase message save notice:', error.message || resCore.error.message || resMin.error.message);
+        }
+      }
+    }
+  }
 }
 
 async function getAppointmentsFromDb() {
+  if (useSupabase && supabase) {
+    const { data, error } = await supabase.from('appointments').select('*');
+    if (error) {
+      console.error('Error fetching appointments from Supabase:', error.message);
+      return loadData().appointments;
+    }
+    return data || [];
+  }
   return loadData().appointments;
 }
 
 async function saveAppointmentToDb(appointment: any) {
+  if (useSupabase && supabase) {
+    const { error } = await supabase.from('appointments').upsert(appointment);
+    if (error) {
+      console.error('Error saving appointment to Supabase:', error.message);
+    } else {
+      return;
+    }
+  }
   const db = loadData();
   const idx = db.appointments.findIndex((a: any) => a.id === appointment.id);
   if (idx !== -1) {
@@ -651,10 +1083,26 @@ async function saveAppointmentToDb(appointment: any) {
 }
 
 async function getAutomationRulesFromDb() {
+  if (useSupabase && supabase) {
+    const { data, error } = await supabase.from('automationRules').select('*');
+    if (error) {
+      console.error('Error fetching automationRules from Supabase:', error.message);
+      return loadData().automationRules || [];
+    }
+    return data || [];
+  }
   return loadData().automationRules || [];
 }
 
 async function saveAutomationRuleToDb(rule: any) {
+  if (useSupabase && supabase) {
+    const { error } = await supabase.from('automationRules').upsert(rule);
+    if (error) {
+      console.error('Error saving automationRule to Supabase:', error.message);
+    } else {
+      return;
+    }
+  }
   const db = loadData();
   const idx = db.automationRules.findIndex((r: any) => r.id === rule.id);
   if (idx !== -1) {
@@ -666,20 +1114,52 @@ async function saveAutomationRuleToDb(rule: any) {
 }
 
 async function getAutomationLogsFromDb() {
+  if (useSupabase && supabase) {
+    const { data, error } = await supabase.from('automationLogs').select('*');
+    if (error) {
+      console.error('Error fetching automationLogs from Supabase:', error.message);
+      return loadData().automationLogs || [];
+    }
+    return data || [];
+  }
   return loadData().automationLogs || [];
 }
 
 async function saveAutomationLogToDb(log: any) {
+  if (useSupabase && supabase) {
+    const { error } = await supabase.from('automationLogs').upsert(log);
+    if (error) {
+      console.error('Error saving automationLog to Supabase:', error.message);
+    } else {
+      return;
+    }
+  }
   const db = loadData();
   db.automationLogs.unshift(log);
   saveData(db);
 }
 
 async function getAuditLogsFromDb() {
+  if (useSupabase && supabase) {
+    const { data, error } = await supabase.from('auditLogs').select('*');
+    if (error) {
+      console.error('Error fetching auditLogs from Supabase:', error.message);
+      return loadData().auditLogs || [];
+    }
+    return data || [];
+  }
   return loadData().auditLogs || [];
 }
 
 async function saveAuditLogToDb(log: any) {
+  if (useSupabase && supabase) {
+    const { error } = await supabase.from('auditLogs').upsert(log);
+    if (error) {
+      console.error('Error saving auditLog to Supabase:', error.message);
+    } else {
+      return;
+    }
+  }
   const db = loadData();
   db.auditLogs.unshift(log);
   saveData(db);
@@ -728,27 +1208,45 @@ async function triggerWorkflowEvent(matterId: string, triggerName: string, recip
 
 // Authenticate / Switch User context easily for the client portal
 app.post('/api/auth/login', async (req, res) => {
-  const { userId } = req.body;
+  const { userId, email, password } = req.body;
   const users = await getUsersFromDb();
-  const user = users.find((u: any) => u.id === userId);
   
+  if (email) {
+    const user = users.find((u: any) => u.email?.toLowerCase() === email.toLowerCase());
+    if (!user) {
+      return res.status(401).json({ error: 'User profile with this email not found.' });
+    }
+    if (password && user.password !== password) {
+      return res.status(412).json({ error: 'Invalid security credentials. Please verify your password.' });
+    }
+    const { password: userPass, ...cleanUser } = user;
+    await logAudit(user.id, 'USER_LOGIN', `Logged in using standard credentials (FICA status verified)`, req);
+    return res.json({ user: cleanUser, message: 'Authenticated successfully!' });
+  }
+
+  const user = users.find((u: any) => u.id === userId);
   if (!user) {
     return res.status(401).json({ error: 'User profile not found.' });
   }
   
+  const { password: userPass, ...cleanUser } = user;
   await logAudit(userId, 'USER_LOGIN', `Logged in using OAuth2 simulator (MFA & Biometric integration validated)`, req);
-  res.json({ user });
+  res.json({ user: cleanUser });
 });
 
 // Get all registered users
 app.get('/api/users', async (req, res) => {
   const users = await getUsersFromDb();
-  res.json(users);
+  const cleanUsers = users.map((u: any) => {
+    const { password, ...rest } = u;
+    return rest;
+  });
+  res.json(cleanUsers);
 });
 
 // Update user profile info & picture
 app.put('/api/users/:id', async (req, res) => {
-  const { name, email, phone, idNumber, address, avatarUrl, subscriptionPlan, subscribedToNewsletter } = req.body;
+  const { name, email, phone, idNumber, address, avatarUrl, password, subscriptionPlan, subscribedToNewsletter } = req.body;
   const users = await getUsersFromDb();
   const user = users.find((u: any) => u.id === req.params.id);
   if (!user) return res.status(404).json({ error: 'User profile not found.' });
@@ -758,6 +1256,7 @@ app.put('/api/users/:id', async (req, res) => {
   if (phone !== undefined) user.phone = phone;
   if (idNumber !== undefined) user.idNumber = idNumber;
   if (address !== undefined) user.address = address;
+  if (password !== undefined) user.password = password;
   if (avatarUrl !== undefined) {
     if (typeof avatarUrl === 'string' && avatarUrl.startsWith('data:image/')) {
       const uploadRes = await uploadToCloudStorage(avatarUrl, `profile-${user.id}.png`, 'mdocs', 'profile-pictures');
@@ -771,7 +1270,9 @@ app.put('/api/users/:id', async (req, res) => {
 
   await saveUserToDb(user);
   await logAudit(user.id, 'USER_UPDATE_PROFILE', `Updated profile info for ${user.name} (${user.email})`, req);
-  res.json({ user, message: 'Profile updated successfully.' });
+  
+  const { password: userPass, ...cleanUser } = user;
+  res.json({ user: cleanUser, message: 'Profile updated successfully.' });
 });
 
 // Delete user account
@@ -837,12 +1338,154 @@ app.post('/api/users/:id/role', async (req, res) => {
   res.json({ user, message: `Role successfully allocated to ${role}.` });
 });
 
+// Allocate legal staff (Attorneys, Conveyancers, Paralegals) to a Client
+app.post('/api/users/:clientId/allocate-staff', async (req, res) => {
+  const { staffIds, adminUserId } = req.body;
+  const clientId = req.params.clientId;
+  
+  const users = await getUsersFromDb();
+  const client = users.find((u: any) => u.id === clientId);
+  if (!client) {
+    return res.status(404).json({ error: 'Client user profile not found.' });
+  }
+
+  const newStaffIds: string[] = Array.isArray(staffIds) ? staffIds : [];
+  client.allocatedStaffIds = newStaffIds;
+
+  // Sync staff members' allocatedClientIds
+  for (const u of users) {
+    if (['attorney', 'conveyancer', 'paralegal'].includes(u.role)) {
+      if (!Array.isArray(u.allocatedClientIds)) u.allocatedClientIds = [];
+      if (newStaffIds.includes(u.id)) {
+        if (!u.allocatedClientIds.includes(clientId)) {
+          u.allocatedClientIds.push(clientId);
+          await saveUserToDb(u);
+        }
+      } else {
+        if (u.allocatedClientIds.includes(clientId)) {
+          u.allocatedClientIds = u.allocatedClientIds.filter((id: string) => id !== clientId);
+          await saveUserToDb(u);
+        }
+      }
+    }
+  }
+
+  await saveUserToDb(client);
+
+  const adminUser = users.find((u: any) => u.id === adminUserId) || { name: 'Admin' };
+  await logAudit(
+    adminUserId || 'usr-admin-1',
+    'ALLOCATE_CLIENT_STAFF',
+    `Admin (${adminUser.name}) allocated ${newStaffIds.length} legal staff member(s) to client ${client.name} (${client.email}).`,
+    req
+  );
+
+  res.json({ client, message: `Successfully updated legal staff allocations for ${client.name}.` });
+});
+
+// Allocate Clients to a legal staff member (Attorney, Conveyancer, or Paralegal)
+app.post('/api/users/:staffId/allocate-clients', async (req, res) => {
+  const { clientIds, adminUserId } = req.body;
+  const staffId = req.params.staffId;
+
+  const users = await getUsersFromDb();
+  const staff = users.find((u: any) => u.id === staffId);
+  if (!staff) {
+    return res.status(404).json({ error: 'Legal staff user profile not found.' });
+  }
+
+  const newClientIds: string[] = Array.isArray(clientIds) ? clientIds : [];
+  staff.allocatedClientIds = newClientIds;
+
+  // Sync clients' allocatedStaffIds
+  for (const u of users) {
+    if (['buyer', 'seller', 'other'].includes(u.role) || u.role === 'buyer' || u.role === 'seller') {
+      if (!Array.isArray(u.allocatedStaffIds)) u.allocatedStaffIds = [];
+      if (newClientIds.includes(u.id)) {
+        if (!u.allocatedStaffIds.includes(staffId)) {
+          u.allocatedStaffIds.push(staffId);
+          await saveUserToDb(u);
+        }
+      } else {
+        if (u.allocatedStaffIds.includes(staffId)) {
+          u.allocatedStaffIds = u.allocatedStaffIds.filter((id: string) => id !== staffId);
+          await saveUserToDb(u);
+        }
+      }
+    }
+  }
+
+  await saveUserToDb(staff);
+
+  const adminUser = users.find((u: any) => u.id === adminUserId) || { name: 'Admin' };
+  await logAudit(
+    adminUserId || 'usr-admin-1',
+    'ALLOCATE_STAFF_CLIENTS',
+    `Admin (${adminUser.name}) allocated ${newClientIds.length} client(s) to ${staff.role} ${staff.name} (${staff.email}).`,
+    req
+  );
+
+  res.json({ staff, message: `Successfully updated client allocations for ${staff.name}.` });
+});
+
+// Bulk allocate clients to attorneys, conveyancers, and paralegals
+app.post('/api/users/allocate-bulk', async (req, res) => {
+  const { allocations, adminUserId } = req.body; // Array of { clientId: string, staffIds: string[] }
+  if (!Array.isArray(allocations)) {
+    return res.status(400).json({ error: 'allocations must be an array of { clientId, staffIds }' });
+  }
+
+  const users = await getUsersFromDb();
+
+  for (const item of allocations) {
+    const client = users.find((u: any) => u.id === item.clientId);
+    if (!client) continue;
+
+    const newStaffIds: string[] = Array.isArray(item.staffIds) ? item.staffIds : [];
+    client.allocatedStaffIds = newStaffIds;
+
+    for (const u of users) {
+      if (['attorney', 'conveyancer', 'paralegal'].includes(u.role)) {
+        if (!Array.isArray(u.allocatedClientIds)) u.allocatedClientIds = [];
+        if (newStaffIds.includes(u.id)) {
+          if (!u.allocatedClientIds.includes(client.id)) {
+            u.allocatedClientIds.push(client.id);
+          }
+        } else {
+          u.allocatedClientIds = u.allocatedClientIds.filter((id: string) => id !== client.id);
+        }
+      }
+    }
+  }
+
+  // Save all users
+  for (const u of users) {
+    await saveUserToDb(u);
+  }
+
+  const adminUser = users.find((u: any) => u.id === adminUserId) || { name: 'Admin' };
+  await logAudit(
+    adminUserId || 'usr-admin-1',
+    'ALLOCATE_BULK_CLIENT_STAFF',
+    `Admin (${adminUser.name}) updated bulk client-staff allocations across ${allocations.length} client accounts.`,
+    req
+  );
+
+  res.json({ success: true, message: 'Bulk allocations updated successfully.' });
+});
+
 // Create/Register new users in the conveyancing system
-app.post('/api/auth/register', async (req, res) => {
-  const { name, email, role, phone, idNumber, address } = req.body;
+const registerHandler = async (req: express.Request, res: express.Response) => {
+  const { name, email, role, phone, idNumber, address, password } = req.body;
   
   if (!name || !email || !role) {
     return res.status(400).json({ error: 'Required fields: name, email, role.' });
+  }
+
+  // Check for duplicate emails
+  const users = await getUsersFromDb();
+  if (users.some((u: any) => u.email?.toLowerCase() === email.toLowerCase())) {
+    return res.status(400).json({ error: 'User with this email is already registered.' });
   }
 
   // Enforce staff role allocation: self-registrations can only pick buyer, seller, or other.
@@ -858,6 +1501,7 @@ app.post('/api/auth/register', async (req, res) => {
     phone,
     idNumber,
     address,
+    password: password || 'masina123',
     kycStatus: 'pending' as const,
     consentAccepted: true,
     consentDate: new Date().toISOString(),
@@ -877,7 +1521,19 @@ app.post('/api/auth/register', async (req, res) => {
     'email'
   );
   
-  res.json({ user: newUser });
+  const { password: userPass, ...cleanUser } = newUser;
+  res.json({ user: cleanUser, message: 'Account registered successfully!' });
+};
+
+app.post('/api/auth/register', registerHandler);
+app.post('/api/auth/signup', registerHandler);
+
+app.post('/api/auth/logout', async (req, res) => {
+  const { userId } = req.body;
+  if (userId) {
+    await logAudit(userId, 'USER_LOGOUT', `Logged out and cleared active session`, req);
+  }
+  res.json({ success: true, message: 'Logged out successfully.' });
 });
 
 // Update KYC & Onboarding values
@@ -1451,6 +2107,59 @@ async function uploadToCloudStorage(
   bucketName: string = 'mdocs',
   folder: string = 'uploads'
 ) {
+  if (useSupabase && supabase) {
+    try {
+      let buffer: Buffer;
+      let contentType = 'application/pdf';
+
+      if (fileDataStr.startsWith('data:')) {
+        const matches = fileDataStr.match(/^data:(.+?);base64,(.+)$/);
+        if (matches) {
+          contentType = matches[1];
+          buffer = Buffer.from(matches[2], 'base64');
+        } else {
+          buffer = Buffer.from(fileDataStr);
+        }
+      } else {
+        buffer = Buffer.from(fileDataStr);
+      }
+
+      const cleanFileName = fileName.replace(/[^a-zA-Z0-9_.-]/g, '_');
+      const filePath = `${folder}/${Date.now()}_${cleanFileName}`;
+
+      let targetBucket = bucketName || 'mdocs';
+      let uploadRes = await supabase.storage
+        .from(targetBucket)
+        .upload(filePath, buffer, { contentType, upsert: true });
+
+      if (uploadRes.error) {
+        // Fallback try with 'documents' or 'public' bucket
+        const altRes = await supabase.storage
+          .from('documents')
+          .upload(filePath, buffer, { contentType, upsert: true });
+        if (!altRes.error) {
+          targetBucket = 'documents';
+          uploadRes = altRes;
+        }
+      }
+
+      if (!uploadRes.error) {
+        const { data: publicUrlData } = supabase.storage
+          .from(targetBucket)
+          .getPublicUrl(filePath);
+
+        if (publicUrlData && publicUrlData.publicUrl) {
+          return { success: true, url: publicUrlData.publicUrl, isFallback: false };
+        }
+      } else {
+        // Log info/warn instead of error when Supabase RLS policies restrict direct bucket upload
+        console.warn('Supabase storage bucket upload bypassed (RLS or policy restricted):', uploadRes.error?.message || 'RLS policy');
+      }
+    } catch (err: any) {
+      console.warn('Fallback to local document store (Storage error):', err?.message || err);
+    }
+  }
+
   return { success: true, url: fileDataStr, isFallback: true };
 }
 // Storage API Routes

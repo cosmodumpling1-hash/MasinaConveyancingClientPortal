@@ -5,26 +5,41 @@ import { PropertyMatter, StageDetails, StageTask, User } from '../types';
 interface StageTrackerProps {
   matter: PropertyMatter;
   currentUser: User;
+  allUsers?: User[];
   onUpdateStage: (matterId: string, currentStage: number, lawyerNotes?: string, tasks?: StageTask[]) => void;
 }
 
-export default function StageTracker({ matter, currentUser, onUpdateStage }: StageTrackerProps) {
+export default function StageTracker({ matter, currentUser, allUsers, onUpdateStage }: StageTrackerProps) {
   const [expandedStage, setExpandedStage] = React.useState<number>(matter.currentStage);
   const [editingNotes, setEditingNotes] = React.useState(false);
   const [lawyerNotesInput, setLawyerNotesInput] = React.useState('');
 
   const isStaff = currentUser.role !== 'buyer' && currentUser.role !== 'seller';
 
+  const stages: StageDetails[] = React.useMemo(() => {
+    if (!matter || !matter.stages) return [];
+    if (Array.isArray(matter.stages)) return matter.stages;
+    if (typeof matter.stages === 'string') {
+      try {
+        const parsed = JSON.parse(matter.stages);
+        if (Array.isArray(parsed)) return parsed;
+      } catch (e) {
+        console.error("Failed to parse matter.stages JSON:", e);
+      }
+    }
+    return [];
+  }, [matter?.stages, matter]);
+
   React.useEffect(() => {
     setExpandedStage(matter.currentStage);
-    const activeStage = matter.stages.find(s => s.stageNumber === matter.currentStage);
+    const activeStage = stages.find(s => s.stageNumber === matter.currentStage);
     setLawyerNotesInput(activeStage?.lawyerNotes || '');
-  }, [matter.currentStage, matter]);
+  }, [matter.currentStage, matter, stages]);
 
   const handleTaskToggle = (stageNumber: number, taskId: string) => {
     if (!isStaff) return; // Only staff can check off checklist tasks
 
-    const stage = matter.stages.find(s => s.stageNumber === stageNumber);
+    const stage = stages.find(s => s.stageNumber === stageNumber);
     if (!stage) return;
 
     const updatedTasks = stage.tasks.map(t => {
@@ -76,7 +91,7 @@ export default function StageTracker({ matter, currentUser, onUpdateStage }: Sta
             Conveyancing Progress Index
           </h3>
           <span className="text-[11px] font-bold bg-brand-gold/10 text-brand-gold-dark px-2.5 py-1 rounded-full border border-brand-gold/15">
-            Active: Stage {matter.currentStage}/8 — {matter.stages.find(s => s.stageNumber === matter.currentStage)?.name}
+            Active: Stage {matter.currentStage}/8 — {stages.find(s => s.stageNumber === matter.currentStage)?.name || 'Stage ' + matter.currentStage}
           </span>
         </div>
 
@@ -155,7 +170,7 @@ export default function StageTracker({ matter, currentUser, onUpdateStage }: Sta
         {/* Main expanded card */}
         <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200/60 shadow-premium p-6 space-y-6">
           {(() => {
-            const currentStageDetails = matter.stages.find(s => s.stageNumber === expandedStage);
+            const currentStageDetails = stages.find(s => s.stageNumber === expandedStage);
             if (!currentStageDetails) return null;
 
             const isCompleted = expandedStage < matter.currentStage;
@@ -298,15 +313,76 @@ export default function StageTracker({ matter, currentUser, onUpdateStage }: Sta
             )}
           </div>
 
-          <div className="border-t border-slate-100 pt-4 space-y-2 text-xs font-sans">
+          <div className="border-t border-slate-100 pt-4 space-y-3 text-xs font-sans">
             <div className="flex justify-between text-slate-500">
               <span>Expected Completion:</span>
               <span className="font-semibold text-slate-700">{matter.expectedCompletionDate}</span>
             </div>
-            <div className="flex justify-between text-slate-500">
-              <span>Primary Conveyancer:</span>
-              <span className="font-semibold text-slate-700">{matter.assignedAttorneyName}</span>
-            </div>
+
+            {/* Allocated Legal Staff Team */}
+            {(() => {
+              const clientUser = allUsers?.find(u => u.id === matter.buyerId || u.id === matter.sellerId) || currentUser;
+              const allocatedStaff = allUsers?.filter(u => (clientUser.allocatedStaffIds || []).includes(u.id)) || [];
+              const attorneys = allocatedStaff.filter(u => u.role === 'attorney');
+              const conveyancers = allocatedStaff.filter(u => u.role === 'conveyancer');
+              const paralegals = allocatedStaff.filter(u => u.role === 'paralegal');
+
+              if (allocatedStaff.length === 0) {
+                return (
+                  <div className="flex justify-between text-slate-500">
+                    <span>Lead Attorney:</span>
+                    <span className="font-semibold text-slate-700">{matter.assignedAttorneyName}</span>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="space-y-2 pt-2 border-t border-slate-100">
+                  <div className="font-bold text-slate-800 text-[11px] uppercase tracking-wider">
+                    Allocated Legal Team ({allocatedStaff.length})
+                  </div>
+
+                  {attorneys.length > 0 && (
+                    <div className="space-y-1">
+                      <span className="text-[10px] text-blue-700 font-bold block">⚖️ Attorneys:</span>
+                      <div className="flex flex-wrap gap-1">
+                        {attorneys.map(a => (
+                          <span key={a.id} className="bg-blue-50 text-blue-800 border border-blue-200 px-2 py-0.5 rounded text-[10px] font-semibold">
+                            {a.name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {conveyancers.length > 0 && (
+                    <div className="space-y-1">
+                      <span className="text-[10px] text-amber-700 font-bold block">📜 Conveyancers:</span>
+                      <div className="flex flex-wrap gap-1">
+                        {conveyancers.map(c => (
+                          <span key={c.id} className="bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded text-[10px] font-semibold">
+                            {c.name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {paralegals.length > 0 && (
+                    <div className="space-y-1">
+                      <span className="text-[10px] text-emerald-700 font-bold block">📋 Paralegals:</span>
+                      <div className="flex flex-wrap gap-1">
+                        {paralegals.map(p => (
+                          <span key={p.id} className="bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded text-[10px] font-semibold">
+                            {p.name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         </div>
       </div>

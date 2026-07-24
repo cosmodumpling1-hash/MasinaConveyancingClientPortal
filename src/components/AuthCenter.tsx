@@ -51,7 +51,7 @@ export default function AuthCenter({
     setSuccess(null);
 
     try {
-      const data = await safeFetch('/api/auth/login', {
+      const data = await safeFetch<{ user: UserType; message?: string }>('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
@@ -64,29 +64,6 @@ export default function AuthCenter({
         throw new Error('Authentication response did not contain user data.');
       }
     } catch (err: any) {
-      // Check if we can fallback to matching local user in allUsers or client session for static hosting
-      const matchedUser = allUsers.find(u => u.email?.toLowerCase() === email.toLowerCase());
-      if (matchedUser) {
-        setSuccess(`Logged in successfully as ${matchedUser.name}!`);
-        onLoginSuccess(matchedUser);
-        return;
-      }
-
-      if (err.message?.includes('non-JSON') || err.message?.includes('HTML') || err.message?.includes('Network error')) {
-        const localUser: UserType = {
-          id: `usr-${Date.now()}`,
-          name: email.split('@')[0],
-          email: email,
-          role: 'buyer',
-          kycStatus: 'pending',
-          consentAccepted: true,
-          subscribedToNewsletter: true
-        };
-        setSuccess(`Logged in successfully as ${localUser.name}!`);
-        onLoginSuccess(localUser);
-        return;
-      }
-
       setError(err.message || 'Authentication failed. Please verify credentials.');
     } finally {
       setLoading(false);
@@ -110,7 +87,7 @@ export default function AuthCenter({
     setSuccess(null);
 
     try {
-      const data = await safeFetch('/api/auth/signup', {
+      const data = await safeFetch<{ user: UserType; message?: string }>('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -131,23 +108,6 @@ export default function AuthCenter({
       }
       setActiveTab('login');
     } catch (err: any) {
-      if (err.message?.includes('non-JSON') || err.message?.includes('HTML') || err.message?.includes('Network error')) {
-        const newUser: UserType = {
-          id: `usr-${Date.now()}`,
-          name,
-          email,
-          role: role as any,
-          phone,
-          idNumber,
-          address,
-          kycStatus: 'pending',
-          consentAccepted: true,
-          subscribedToNewsletter: true
-        };
-        setSuccess('Account registered successfully!');
-        onLoginSuccess(newUser);
-        return;
-      }
       setError(err.message || 'Registration failed.');
     } finally {
       setLoading(false);

@@ -1,6 +1,7 @@
 import React from 'react';
-import { Folder, Upload, FileText, CheckCircle, XCircle, AlertTriangle, Eye, Search, Calendar, User, CornerDownRight, Check, X, ShieldAlert, Sparkles, Send, File, Download, HardDrive } from 'lucide-react';
+import { Folder, Upload, FileText, CheckCircle, XCircle, AlertTriangle, Eye, Search, Calendar, User, CornerDownRight, Check, X, ShieldAlert, Sparkles, Send, File, Download, HardDrive, FileCheck } from 'lucide-react';
 import { Document, DocumentCategory, User as UserType } from '../types';
+import PdfViewerModal from './PdfViewerModal';
 
 interface DocumentManagerProps {
   documents: Document[];
@@ -15,6 +16,10 @@ export default function DocumentManager({ documents, currentUser, matterId, onUp
   const [searchQuery, setSearchQuery] = React.useState('');
   const [reviewNotes, setReviewNotes] = React.useState<{ [key: string]: string }>({});
   const [uploadCategory, setUploadCategory] = React.useState<DocumentCategory>('fica');
+  
+  // PDF Viewer Modal State
+  const [previewDoc, setPreviewDoc] = React.useState<Document | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = React.useState<boolean>(false);
   
   // File upload state
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
@@ -511,22 +516,34 @@ export default function DocumentManager({ documents, currentUser, matterId, onUp
                       {/* Actions Column */}
                       <td className="p-4 text-right">
                         <div className="flex items-center justify-end space-x-2">
+                          <button
+                            onClick={() => {
+                              setPreviewDoc(doc);
+                              setIsPreviewOpen(true);
+                            }}
+                            className="inline-flex items-center space-x-1.5 bg-brand-navy hover:bg-brand-navy/90 text-white px-3 py-1.5 rounded-lg text-[11px] font-bold shadow-sm transition-colors cursor-pointer border border-slate-800"
+                            title="Preview Legal Document in Portal"
+                          >
+                            <Eye className="h-3.5 w-3.5 text-brand-gold" />
+                            <span>Preview</span>
+                          </button>
+
                           {hasValidUrl && (
                             <a
                               href={doc.fileUrl}
                               target="_blank"
                               rel="noopener noreferrer"
                               download={doc.name}
-                              className="inline-flex items-center space-x-1 bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1.5 rounded text-[11px] font-bold transition-colors"
-                              title="View or Download Document"
+                              className="inline-flex items-center space-x-1 bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-colors"
+                              title="Download Copy"
                             >
-                              <Eye className="h-3.5 w-3.5 text-brand-navy" />
-                              <span>View</span>
+                              <Download className="h-3.5 w-3.5 text-slate-600" />
+                              <span>Download</span>
                             </a>
                           )}
 
                           {isStaff && doc.status === 'pending_review' && (
-                            <div className="flex items-center space-x-1.5">
+                            <div className="flex items-center space-x-1.5 ml-1">
                               <input
                                 type="text"
                                 value={reviewNotes[doc.id] || ''}
@@ -560,6 +577,15 @@ export default function DocumentManager({ documents, currentUser, matterId, onUp
           </div>
         )}
       </div>
+
+      {/* Embedded Client-Side PDF Viewer Modal */}
+      <PdfViewerModal
+        doc={previewDoc}
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+        onReview={onReview}
+        isStaff={isStaff}
+      />
     </div>
   );
 }

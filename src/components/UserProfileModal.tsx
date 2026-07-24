@@ -28,6 +28,7 @@ export default function UserProfileModal({
   const [idNumber, setIdNumber] = React.useState(user.idNumber || '');
   const [address, setAddress] = React.useState(user.address || '');
   const [avatarUrl, setAvatarUrl] = React.useState(user.avatarUrl || '');
+  const [password, setPassword] = React.useState('');
 
   // Subscription form state
   const [selectedPlan, setSelectedPlan] = React.useState<'free' | 'pro' | 'enterprise'>(user.subscriptionPlan || 'free');
@@ -121,14 +122,19 @@ export default function UserProfileModal({
     setErrorMessage('');
 
     try {
-      await onUpdateUser({
+      const updatePayload: Partial<UserType> = {
         name,
         email,
         phone,
         idNumber,
         address,
         avatarUrl,
-      });
+      };
+      if (password) {
+        updatePayload.password = password;
+      }
+      await onUpdateUser(updatePayload);
+      setPassword('');
       setSuccessMessage('Profile and picture updated successfully!');
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err: any) {
@@ -400,6 +406,20 @@ export default function UserProfileModal({
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     placeholder="e.g. 14 Blue Crane Estate, Midrand, South Africa"
+                    className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:ring-1 focus:ring-brand-gold focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">New Security Password</label>
+                <div className="relative">
+                  <Shield className="h-4 w-4 text-slate-400 absolute left-3 top-2.5" />
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Leave blank to keep current password (Default is 'masina123')"
                     className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 focus:ring-1 focus:ring-brand-gold focus:outline-none"
                   />
                 </div>

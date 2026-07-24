@@ -19,6 +19,7 @@ import AuthCenter from './components/AuthCenter';
 import UserProfileModal from './components/UserProfileModal';
 import LegalModal from './components/LegalModal';
 import MasinaLogo from './components/MasinaLogo';
+import ToastContainer, { ToastMessage } from './components/Toast';
 import { safeFetch } from './lib/safeFetch';
 
 export default function App() {
@@ -29,6 +30,22 @@ export default function App() {
   const [isProfileModalOpen, setIsProfileModalOpen] = React.useState<boolean>(false);
   const [isLegalModalOpen, setIsLegalModalOpen] = React.useState<boolean>(false);
   const [legalInitialTab, setLegalInitialTab] = React.useState<'privacy' | 'terms'>('privacy');
+
+  // Toast Notification system state
+  const [toasts, setToasts] = React.useState<ToastMessage[]>([]);
+
+  const addToast = (toast: Omit<ToastMessage, 'id'>) => {
+    const newToast: ToastMessage = {
+      ...toast,
+      id: `toast-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    };
+    setToasts(prev => [newToast, ...prev].slice(0, 5));
+  };
+
+  const dismissToast = (id: string) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  };
 
   // Navigation tab controls (depends on Client vs Staff role)
   const [activeTab, setActiveTab] = React.useState<string>('dashboard');
@@ -193,7 +210,7 @@ export default function App() {
     }
   };
 
-  const handleUploadDocument = async (docData: { name: string; category: string }) => {
+  const handleUploadDocument = async (docData: { name: string; category: string; fileUrl?: string; size?: string }) => {
     try {
       const res = await fetch('/api/documents', {
         method: 'POST',
@@ -204,14 +221,27 @@ export default function App() {
           uploadedBy: currentUser?.name || 'Client'
         })
       });
+      addToast({
+        type: 'success',
+        title: 'Document Transmitted',
+        message: `File '${docData.name}' uploaded to Deeds Registry vault.`
+      });
       await refreshAllContexts(currentUser?.id);
     } catch (err) {
       console.error(err);
+      addToast({
+        type: 'error',
+        title: 'Upload Failed',
+        message: 'Unable to upload document to secure vault.'
+      });
     }
   };
 
   const handleReviewDocument = async (docId: string, status: 'approved' | 'rejected', notes: string) => {
     try {
+      const docObj = documents.find(d => d.id === docId);
+      const docName = docObj ? docObj.name : 'Legal Document';
+
       await fetch(`/api/documents/${docId}/status`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -221,9 +251,23 @@ export default function App() {
           staffId: currentUser?.id
         })
       });
+
+      addToast({
+        type: status === 'approved' ? 'success' : 'warning',
+        title: status === 'approved' ? 'Document Verified' : 'Document Rejected',
+        message: status === 'approved' 
+          ? `'${docName}' status updated to APPROVED by attorney.` 
+          : `'${docName}' status set to REJECTED. Re-upload required.`
+      });
+
       await refreshAllContexts(currentUser?.id);
     } catch (err) {
       console.error(err);
+      addToast({
+        type: 'error',
+        title: 'Review Action Failed',
+        message: 'Could not submit attorney review status.'
+      });
     }
   };
 
@@ -234,6 +278,13 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ currentStage, lawyerNotes, tasks })
       });
+      
+      addToast({
+        type: 'info',
+        title: 'Conveyancing Stage Advanced',
+        message: `Transfer matter progress updated to Stage ${currentStage}.`
+      });
+
       await refreshAllContexts(currentUser?.id);
     } catch (err) {
       console.error(err);
@@ -247,6 +298,11 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...taskData, matterId: selectedMatterId })
       });
+      addToast({
+        type: 'info',
+        title: 'New Conveyancing Task',
+        message: `Task '${taskData.title || 'Conveyancing Action'}' created.`
+      });
       await refreshAllContexts(currentUser?.id);
     } catch (err) {
       console.error(err);
@@ -259,6 +315,11 @@ export default function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: currentUser?.id })
+      });
+      addToast({
+        type: 'success',
+        title: 'Task Cleared',
+        message: 'Conveyancing requirement marked complete.'
       });
       await refreshAllContexts(currentUser?.id);
     } catch (err) {
@@ -277,9 +338,21 @@ export default function App() {
           fileAttachment
         })
       });
+
+      addToast({
+        type: 'info',
+        title: 'New Portal Message Arrived',
+        message: `Message sent: "${text.substring(0, 45)}${text.length > 45 ? '...' : ''}"`
+      });
+
       await refreshAllContexts(currentUser?.id);
     } catch (err) {
       console.error(err);
+      addToast({
+        type: 'error',
+        title: 'Message Dispatch Failed',
+        message: 'Unable to send message to portal chat.'
+      });
     }
   };
 
@@ -330,6 +403,76 @@ export default function App() {
         body: JSON.stringify({ role: newRole, adminUserId: currentUser?.id })
       });
       if (res.ok) {
+        await refreshAllContexts(currentUser?.id);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleAllocateStaffToClient = async (clientId: string, staffIds: string[]) => {
+    try {
+      const res = await fetch(`/api/users/${clientId}/allocate-staff`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ staffIds, adminUserId: currentUser?.id })
+      });
+      if (res.ok) {
+        addToast({
+          type: 'success',
+          title: 'Legal Team Allocated',
+          message: 'Legal staff allocation updated successfully for client.'
+        });
+        await refreshAllContexts(currentUser?.id);
+      }
+    } catch (err) {
+      console.error(err);
+      addToast({
+        type: 'error',
+        title: 'Allocation Failed',
+        message: 'Could not update legal staff allocation.'
+      });
+    }
+  };
+
+  const handleAllocateClientsToStaff = async (staffId: string, clientIds: string[]) => {
+    try {
+      const res = await fetch(`/api/users/${staffId}/allocate-clients`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientIds, adminUserId: currentUser?.id })
+      });
+      if (res.ok) {
+        addToast({
+          type: 'success',
+          title: 'Client Portfolio Updated',
+          message: 'Client portfolio updated successfully for staff member.'
+        });
+        await refreshAllContexts(currentUser?.id);
+      }
+    } catch (err) {
+      console.error(err);
+      addToast({
+        type: 'error',
+        title: 'Allocation Failed',
+        message: 'Could not update client portfolio allocation.'
+      });
+    }
+  };
+
+  const handleBulkAllocate = async (allocations: { clientId: string; staffIds: string[] }[]) => {
+    try {
+      const res = await fetch('/api/users/allocate-bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ allocations, adminUserId: currentUser?.id })
+      });
+      if (res.ok) {
+        addToast({
+          type: 'success',
+          title: 'Bulk Allocations Saved',
+          message: `Updated client-staff allocations across ${allocations.length} accounts.`
+        });
         await refreshAllContexts(currentUser?.id);
       }
     } catch (err) {
@@ -640,6 +783,7 @@ export default function App() {
                   <StageTracker 
                     matter={activeMatter} 
                     currentUser={currentUser} 
+                    allUsers={allUsers}
                     onUpdateStage={handleUpdateStage} 
                   />
                 </div>
@@ -726,6 +870,9 @@ export default function App() {
                     onAddUser={handleAddTeamMember}
                     onToggleRule={handleToggleRule}
                     onAllocateRole={handleAllocateRole}
+                    onAllocateStaffToClient={handleAllocateStaffToClient}
+                    onAllocateClientsToStaff={handleAllocateClientsToStaff}
+                    onBulkAllocate={handleBulkAllocate}
                     onDeleteUser={handleDeleteUser}
                   />
                 </div>
@@ -763,6 +910,7 @@ export default function App() {
                     <StageTracker 
                       matter={activeMatter} 
                       currentUser={currentUser} 
+                      allUsers={allUsers}
                       onUpdateStage={handleUpdateStage} 
                     />
                   </div>
@@ -869,6 +1017,9 @@ export default function App() {
         onClose={() => setIsLegalModalOpen(false)} 
         initialTab={legalInitialTab} 
       />
+
+      {/* Global Portal Toast Notification System */}
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 }
