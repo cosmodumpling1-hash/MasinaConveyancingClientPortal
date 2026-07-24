@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, User, Mail, Phone, MapPin, CreditCard, Trash2, Upload, CheckCircle, Shield, Sparkles, Camera, Bell, Crown, AlertTriangle, Check } from 'lucide-react';
 import { User as UserType } from '../types';
+import { safeFetch } from '../lib/safeFetch';
 
 interface UserProfileModalProps {
   user: UserType;
@@ -81,28 +82,33 @@ export default function UserProfileModal({
           if (evt.target?.result) {
             const base64Data = evt.target.result as string;
 
-            // Upload directly to Cloud Storage file bucket
-            const res = await fetch('/api/storage/upload', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                fileName: file.name,
-                fileData: base64Data,
-                bucketName: 'mdocs',
-                folder: 'profile-pictures'
-              })
-            });
+            try {
+              // Upload directly to Cloud Storage file bucket
+              const data = await safeFetch<{ url?: string }>('/api/storage/upload', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  fileName: file.name,
+                  fileData: base64Data,
+                  bucketName: 'mdocs',
+                  folder: 'profile-pictures'
+                })
+              });
 
-            const data = await res.json();
-            if (data.url) {
-              setAvatarUrl(data.url);
-              if (data.isFallback) {
+              if (data && data.url) {
+                setAvatarUrl(data.url);
                 setSuccessMessage('Photo processed and updated!');
-              } else {
-                setSuccessMessage(`Saved in Cloud Storage ('${data.bucket}')!`);
+                setTimeout(() => setSuccessMessage(''), 4000);
+                setIsUploadingPic(false);
+                return;
               }
-              setTimeout(() => setSuccessMessage(''), 4000);
+            } catch (uploadErr) {
+              console.warn("Storage upload notice, falling back to local photo payload:", uploadErr);
             }
+
+            setAvatarUrl(base64Data);
+            setSuccessMessage('Photo processed and updated!');
+            setTimeout(() => setSuccessMessage(''), 4000);
             setIsUploadingPic(false);
           }
         };

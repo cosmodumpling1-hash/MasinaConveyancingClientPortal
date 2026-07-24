@@ -212,7 +212,7 @@ export default function App() {
 
   const handleUploadDocument = async (docData: { name: string; category: string; fileUrl?: string; size?: string }) => {
     try {
-      const res = await fetch('/api/documents', {
+      await safeFetch('/api/documents', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -242,7 +242,7 @@ export default function App() {
       const docObj = documents.find(d => d.id === docId);
       const docName = docObj ? docObj.name : 'Legal Document';
 
-      await fetch(`/api/documents/${docId}/status`, {
+      await safeFetch(`/api/documents/${docId}/status`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -273,7 +273,7 @@ export default function App() {
 
   const handleUpdateStage = async (matterId: string, currentStage: number, lawyerNotes?: string, tasks?: any[]) => {
     try {
-      await fetch(`/api/matters/${matterId}/stage`, {
+      await safeFetch(`/api/matters/${matterId}/stage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ currentStage, lawyerNotes, tasks })
@@ -293,7 +293,7 @@ export default function App() {
 
   const handleCreateTask = async (taskData: any) => {
     try {
-      await fetch('/api/tasks', {
+      await safeFetch('/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...taskData, matterId: selectedMatterId })
@@ -311,7 +311,7 @@ export default function App() {
 
   const handleCompleteTask = async (taskId: string) => {
     try {
-      await fetch(`/api/tasks/${taskId}/complete`, {
+      await safeFetch(`/api/tasks/${taskId}/complete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: currentUser?.id })
@@ -329,7 +329,7 @@ export default function App() {
 
   const handleSendMessage = async (text: string, fileAttachment?: any) => {
     try {
-      await fetch('/api/conversations/conv-1/messages', {
+      await safeFetch('/api/conversations/conv-1/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -358,7 +358,7 @@ export default function App() {
 
   const handleBookAppointment = async (bookingData: any) => {
     try {
-      await fetch('/api/appointments', {
+      await safeFetch('/api/appointments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...bookingData, clientId: currentUser?.id })
@@ -371,7 +371,7 @@ export default function App() {
 
   const handleCancelAppointment = async (appId: string) => {
     try {
-      await fetch(`/api/appointments/${appId}/cancel`, {
+      await safeFetch(`/api/appointments/${appId}/cancel`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: currentUser?.id })
@@ -384,7 +384,7 @@ export default function App() {
 
   const handleAddTeamMember = async (userData: any) => {
     try {
-      await fetch('/api/auth/register', {
+      await safeFetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData)
@@ -397,14 +397,12 @@ export default function App() {
 
   const handleAllocateRole = async (userId: string, newRole: string) => {
     try {
-      const res = await fetch(`/api/users/${userId}/role`, {
+      await safeFetch(`/api/users/${userId}/role`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role: newRole, adminUserId: currentUser?.id })
       });
-      if (res.ok) {
-        await refreshAllContexts(currentUser?.id);
-      }
+      await refreshAllContexts(currentUser?.id);
     } catch (err) {
       console.error(err);
     }
@@ -412,19 +410,17 @@ export default function App() {
 
   const handleAllocateStaffToClient = async (clientId: string, staffIds: string[]) => {
     try {
-      const res = await fetch(`/api/users/${clientId}/allocate-staff`, {
+      await safeFetch(`/api/users/${clientId}/allocate-staff`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ staffIds, adminUserId: currentUser?.id })
       });
-      if (res.ok) {
-        addToast({
-          type: 'success',
-          title: 'Legal Team Allocated',
-          message: 'Legal staff allocation updated successfully for client.'
-        });
-        await refreshAllContexts(currentUser?.id);
-      }
+      addToast({
+        type: 'success',
+        title: 'Legal Team Allocated',
+        message: 'Legal staff allocation updated successfully for client.'
+      });
+      await refreshAllContexts(currentUser?.id);
     } catch (err) {
       console.error(err);
       addToast({
@@ -437,19 +433,17 @@ export default function App() {
 
   const handleAllocateClientsToStaff = async (staffId: string, clientIds: string[]) => {
     try {
-      const res = await fetch(`/api/users/${staffId}/allocate-clients`, {
+      await safeFetch(`/api/users/${staffId}/allocate-clients`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ clientIds, adminUserId: currentUser?.id })
       });
-      if (res.ok) {
-        addToast({
-          type: 'success',
-          title: 'Client Portfolio Updated',
-          message: 'Client portfolio updated successfully for staff member.'
-        });
-        await refreshAllContexts(currentUser?.id);
-      }
+      addToast({
+        type: 'success',
+        title: 'Client Portfolio Updated',
+        message: 'Client portfolio updated successfully for staff member.'
+      });
+      await refreshAllContexts(currentUser?.id);
     } catch (err) {
       console.error(err);
       addToast({
@@ -462,19 +456,17 @@ export default function App() {
 
   const handleBulkAllocate = async (allocations: { clientId: string; staffIds: string[] }[]) => {
     try {
-      const res = await fetch('/api/users/allocate-bulk', {
+      await safeFetch('/api/users/allocate-bulk', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ allocations, adminUserId: currentUser?.id })
       });
-      if (res.ok) {
-        addToast({
-          type: 'success',
-          title: 'Bulk Allocations Saved',
-          message: `Updated client-staff allocations across ${allocations.length} accounts.`
-        });
-        await refreshAllContexts(currentUser?.id);
-      }
+      addToast({
+        type: 'success',
+        title: 'Bulk Allocations Saved',
+        message: `Updated client-staff allocations across ${allocations.length} accounts.`
+      });
+      await refreshAllContexts(currentUser?.id);
     } catch (err) {
       console.error(err);
     }
@@ -482,17 +474,10 @@ export default function App() {
 
   const handleToggleRule = async (ruleId: string) => {
     try {
-      const res = await fetch(`/api/automation/rules/${ruleId}/toggle`, {
+      await safeFetch(`/api/automation/rules/${ruleId}/toggle`, {
         method: 'POST'
       });
-      if (res.ok) {
-        await refreshAllContexts(currentUser?.id);
-      } else {
-        // Fallback to optimistic local toggle if server fails
-        setAutomationRules(rules => 
-          rules.map(r => r.id === ruleId ? { ...r, enabled: !r.enabled } : r)
-        );
-      }
+      await refreshAllContexts(currentUser?.id);
     } catch (err) {
       console.error(err);
       setAutomationRules(rules => 
@@ -651,7 +636,7 @@ export default function App() {
         onLogout={async () => {
           try { localStorage.removeItem('masina_current_user_id'); } catch (e) {}
           try {
-            await fetch('/api/auth/logout', {
+            await safeFetch('/api/auth/logout', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ userId: currentUser?.id })

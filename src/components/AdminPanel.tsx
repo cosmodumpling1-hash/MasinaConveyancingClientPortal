@@ -10,6 +10,7 @@ import {
   XAxis, YAxis, Tooltip, Cell, CartesianGrid 
 } from 'recharts';
 import { User as UserType, AuditLog, AutomationRule, AutomationLog } from '../types';
+import { safeFetch } from '../lib/safeFetch';
 
 interface AdminPanelProps {
   currentUser: UserType;
@@ -151,7 +152,7 @@ export default function AdminPanel({
       if (onAllocateStaffToClient) {
         await onAllocateStaffToClient(modalClient.id, modalDraftStaffIds);
       } else {
-        await fetch(`/api/users/${modalClient.id}/allocate-staff`, {
+        await safeFetch(`/api/users/${modalClient.id}/allocate-staff`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ staffIds: modalDraftStaffIds, adminUserId: currentUser.id })
@@ -172,7 +173,7 @@ export default function AdminPanel({
       if (onAllocateClientsToStaff) {
         await onAllocateClientsToStaff(modalStaff.id, modalDraftClientIds);
       } else {
-        await fetch(`/api/users/${modalStaff.id}/allocate-clients`, {
+        await safeFetch(`/api/users/${modalStaff.id}/allocate-clients`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ clientIds: modalDraftClientIds, adminUserId: currentUser.id })
@@ -196,7 +197,7 @@ export default function AdminPanel({
       if (onBulkAllocate) {
         await onBulkAllocate(allocations);
       } else {
-        await fetch('/api/users/allocate-bulk', {
+        await safeFetch('/api/users/allocate-bulk', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ allocations, adminUserId: currentUser.id })

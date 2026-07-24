@@ -117,7 +117,7 @@ export default function AuthCenter({
   const handleLogout = async () => {
     setLoading(true);
     try {
-      await fetch('/api/auth/logout', {
+      await safeFetch('/api/auth/logout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: currentUser?.id })

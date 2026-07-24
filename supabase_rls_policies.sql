@@ -61,8 +61,38 @@ WITH CHECK (true);
 
 
 -- ------------------------------------------------------------------------------
--- 3. DOCUMENTS TABLE SECURITY
+-- 3. DOCUMENTS TABLE STRUCTURE & SECURITY
 -- ------------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS documents (
+  id text PRIMARY KEY,
+  "matterId" text,
+  matter_id text,
+  name text NOT NULL DEFAULT 'Document.pdf',
+  category text DEFAULT 'fica',
+  "fileUrl" text DEFAULT '#',
+  file_url text DEFAULT '#',
+  "uploadDate" text,
+  upload_date text,
+  status text DEFAULT 'pending_review',
+  version integer DEFAULT 1,
+  size text DEFAULT '1.5 MB',
+  "uploadedBy" text DEFAULT 'Client',
+  uploaded_by text DEFAULT 'Client',
+  "reviewerNotes" text,
+  reviewer_notes text
+);
+
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS "matterId" text;
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS matter_id text;
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS "fileUrl" text;
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS file_url text;
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS "uploadDate" text;
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS upload_date text;
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS "uploadedBy" text;
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS uploaded_by text;
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS "reviewerNotes" text;
+ALTER TABLE documents ADD COLUMN IF NOT EXISTS reviewer_notes text;
+
 ALTER TABLE IF EXISTS documents ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Allow authenticated users to view documents" 
@@ -83,8 +113,31 @@ WITH CHECK (true);
 
 
 -- ------------------------------------------------------------------------------
--- 4. TASKS TABLE SECURITY
+-- 4. TASKS TABLE STRUCTURE & SECURITY
 -- ------------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS tasks (
+  id text PRIMARY KEY,
+  "matterId" text,
+  matter_id text,
+  name text NOT NULL,
+  completed boolean DEFAULT false,
+  "assignedTo" text DEFAULT 'staff',
+  assigned_to text DEFAULT 'staff',
+  "dueDate" text,
+  due_date text,
+  "completedAt" text,
+  completed_at text
+);
+
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS "matterId" text;
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS matter_id text;
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS "assignedTo" text;
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS assigned_to text;
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS "dueDate" text;
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS due_date text;
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS "completedAt" text;
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS completed_at text;
+
 ALTER TABLE IF EXISTS tasks ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Allow authenticated access to tasks" 
